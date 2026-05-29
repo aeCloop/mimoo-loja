@@ -75,7 +75,7 @@ export default function App() {
       if (manifestElement) {
         const dynamicManifest = {
           short_name: "Mimoo App",
-          name: "Mimoo Personalizados",
+          name: "Mimoo Personalizados App",
           description: "Criando presentes únicos e momentos inesquecíveis.",
           icons: [
             {
