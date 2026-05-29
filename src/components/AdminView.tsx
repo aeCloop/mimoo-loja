@@ -27,7 +27,8 @@ import {
   Phone,
   Image as ImageIcon,
   CheckCircle2,
-  Instagram
+  Instagram,
+  Edit
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -55,6 +56,9 @@ export default function AdminView({ onLogout }: AdminViewProps) {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [opSuccess, setOpSuccess] = useState('');
+
+  // Editing state
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Creation forms states
   // 1. New Product
@@ -151,6 +155,17 @@ export default function AdminView({ onLogout }: AdminViewProps) {
     }
   };
 
+  const handleDeleteOrder = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este pedido?')) return;
+    try {
+      await api.deleteOrder(id);
+      setOrders(prev => prev.filter(o => o.id !== id));
+      showSuccess('Pedido excluído com sucesso!');
+    } catch (err: any) {
+      setErrorMsg('Erro ao excluir pedido.');
+    }
+  };
+
   // 2. PRODUCT ACTIONS
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,6 +183,20 @@ export default function AdminView({ onLogout }: AdminViewProps) {
     }
   };
 
+  const handleStartEditProduct = (prod: Product) => {
+    setEditingProduct(prod);
+    setNewProdName(prod.name);
+    setNewProdCategory(prod.category);
+    setNewProdDesc(prod.description || '');
+    setNewProdPrice(prod.unit_price.toString());
+    setNewProdImgUrl(prod.image_url);
+    
+    const element = document.getElementById('admin-prod-form');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProdName || !newProdCategory || !newProdPrice || !newProdImgUrl) {
@@ -176,22 +205,39 @@ export default function AdminView({ onLogout }: AdminViewProps) {
     }
 
     try {
-      const added = await api.addProduct({
-        name: newProdName,
-        category: newProdCategory,
-        description: newProdDesc,
-        unit_price: parseFloat(newProdPrice),
-        image_url: newProdImgUrl,
-        active: true
-      });
-      setProducts(prev => [...prev, added]);
-      setNewProdName('');
-      setNewProdDesc('');
-      setNewProdPrice('');
-      setNewProdImgUrl('');
-      showSuccess('Produto cadastrado com sucesso!');
+      if (editingProduct) {
+        const updated = await api.updateProduct(editingProduct.id, {
+          name: newProdName,
+          category: newProdCategory,
+          description: newProdDesc,
+          unit_price: parseFloat(newProdPrice),
+          image_url: newProdImgUrl
+        });
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updated : p));
+        setEditingProduct(null);
+        setNewProdName('');
+        setNewProdDesc('');
+        setNewProdPrice('');
+        setNewProdImgUrl('');
+        showSuccess('Produto editado com sucesso!');
+      } else {
+        const added = await api.addProduct({
+          name: newProdName,
+          category: newProdCategory,
+          description: newProdDesc,
+          unit_price: parseFloat(newProdPrice),
+          image_url: newProdImgUrl,
+          active: true
+        });
+        setProducts(prev => [...prev, added]);
+        setNewProdName('');
+        setNewProdDesc('');
+        setNewProdPrice('');
+        setNewProdImgUrl('');
+        showSuccess('Produto cadastrado com sucesso!');
+      }
     } catch (err: any) {
-      setErrorMsg('Erro ao cadastrar produto no Supabase.');
+      setErrorMsg(editingProduct ? 'Erro ao salvar alterações do produto.' : 'Erro ao cadastrar produto no Supabase.');
     }
   };
 
@@ -578,9 +624,20 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-xs text-slate-400">Total Pago pelo Cliente:</span>
-                        <strong className="text-blue-900 text-sm font-black">{formatBRL(order.total)}</strong>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                        >
+                          <Trash2 size={11} />
+                          Excluir Pedido
+                        </button>
+
+                        <div className="text-right">
+                          <span className="text-xs text-slate-400 mr-2">Total Pago pelo Cliente:</span>
+                          <strong className="text-blue-900 text-sm font-black">{formatBRL(order.total)}</strong>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -597,10 +654,19 @@ export default function AdminView({ onLogout }: AdminViewProps) {
               <div className="lg:col-span-5 space-y-6">
                 
                 {/* Form: New Product */}
-                <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm">
+                <div id="admin-prod-form" className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm">
                   <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider mb-4 flex items-center gap-1">
-                    <PlusCircle size={15} className="text-blue-700" />
-                    Novo Produto
+                    {editingProduct ? (
+                      <>
+                        <Edit size={15} className="text-blue-700" />
+                        Editar Produto
+                      </>
+                    ) : (
+                      <>
+                        <PlusCircle size={15} className="text-blue-700" />
+                        Novo Produto
+                      </>
+                    )}
                   </h4>
 
                   <form onSubmit={handleCreateProduct} className="space-y-3.5">
@@ -689,8 +755,24 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                       type="submit"
                       className="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer shadow-sm transition-colors active:scale-95"
                     >
-                      Cadastrar Produto
+                      {editingProduct ? 'Salvar Alterações' : 'Cadastrar Produto'}
                     </button>
+
+                    {editingProduct && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingProduct(null);
+                          setNewProdName('');
+                          setNewProdDesc('');
+                          setNewProdPrice('');
+                          setNewProdImgUrl('');
+                        }}
+                        className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-colors"
+                      >
+                        Cancelar Edição
+                      </button>
+                    )}
                   </form>
                 </div>
 
@@ -787,6 +869,14 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                                 ) : (
                                   <ToggleLeft size={32} />
                                 )}
+                              </button>
+
+                              <button
+                                onClick={() => handleStartEditProduct(prod)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer active:scale-90"
+                                title="Editar Produto"
+                              >
+                                <Edit size={13} />
                               </button>
 
                               <button

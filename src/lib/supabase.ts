@@ -470,6 +470,19 @@ export const api = {
     }
   },
 
+  async deleteOrder(id: string): Promise<void> {
+    if (useRealSupabase && supabaseClient) {
+      const { error } = await supabaseClient
+        .from('orders')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    } else {
+      const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
+      setStored('orders', list.filter(o => o.id !== id));
+    }
+  },
+
   // CONFIGURATIONS (WhatsApp Number)
   async getWhatsAppNumber(): Promise<string> {
     if (useRealSupabase && supabaseClient) {

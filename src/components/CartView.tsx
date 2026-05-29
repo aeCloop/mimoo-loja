@@ -30,6 +30,38 @@ export default function CartView({
   const [cep, setCep] = useState('');
   const [address, setAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'Pix' | 'Cartão' | 'Dinheiro' | 'Débito'>('Pix');
+
+  // Local storage save credentials
+  const [saveDataLocally, setSaveDataLocally] = useState(false);
+  const [hasSavedData, setHasSavedData] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mimoo_customer_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.name) setName(parsed.name);
+        if (parsed.phone) setPhone(parsed.phone);
+        if (parsed.cep) setCep(parsed.cep);
+        if (parsed.address) setAddress(parsed.address);
+        setSaveDataLocally(true);
+        setHasSavedData(true);
+      }
+    } catch (e) {
+      console.error('Error reading localStorage', e);
+    }
+  }, []);
+
+  const handleClearSavedData = () => {
+    localStorage.removeItem('mimoo_customer_data');
+    setSaveDataLocally(false);
+    setHasSavedData(false);
+    setName('');
+    setPhone('');
+    setCep('');
+    setAddress('');
+    showToast('Dados salvos limpos com sucesso!', 'success');
+  };
   
   // Custom design upload
   const [uploadedUrl, setUploadedUrl] = useState('');
@@ -159,6 +191,18 @@ export default function CartView({
 
       const encodedMsg = encodeURIComponent(baseText);
       const waUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMsg}`;
+
+      // Save local data if checkbox is active
+      if (saveDataLocally) {
+        const dataToSave = {
+          name: name.trim(),
+          phone: phone.trim(),
+          cep: cep.trim(),
+          address: address.trim()
+        };
+        localStorage.setItem('mimoo_customer_data', JSON.stringify(dataToSave));
+        setHasSavedData(true);
+      }
 
       // Reset checkout items
       onClearCart();
@@ -456,6 +500,47 @@ export default function CartView({
                 placeholder="Rua, número e complemento"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all placeholder:text-slate-400"
               />
+            </div>
+
+            {/* Local Storage details */}
+            <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100 text-left">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={saveDataLocally}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setSaveDataLocally(isChecked);
+                    if (!isChecked) {
+                      localStorage.removeItem('mimoo_customer_data');
+                      setHasSavedData(false);
+                      showToast('Salvamento automático desativado.', 'success');
+                    } else {
+                      showToast('Ativado! Seus dados serão gravados ao concluir o pedido.', 'success');
+                    }
+                  }}
+                  className="rounded border-slate-300 text-blue-700 focus:ring-blue-700 mt-1 cursor-pointer w-4 h-4"
+                />
+                <div>
+                  <span className="text-xs font-bold text-slate-700 block">Salvar meus dados neste dispositivo</span>
+                  <span className="text-[10px] text-slate-400 block leading-normal mt-0.5">Seus dados ficarão salvos de forma segura e apenas localmente neste aparelho para compras futuras mais rápidas.</span>
+                </div>
+              </label>
+
+              {hasSavedData && (
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                  <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                    ✓ Contém dados salvos
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleClearSavedData}
+                    className="text-[10px] text-rose-600 hover:text-rose-800 font-black uppercase tracking-wider underline cursor-pointer"
+                  >
+                    Limpar meus dados salvos
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Payment selections checkcards */}
