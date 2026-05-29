@@ -25,7 +25,9 @@ import {
   Bell,
   Sparkles,
   Info,
-  ArrowRight
+  ArrowRight,
+  Instagram,
+  MessageCircle
 } from 'lucide-react';
 
 export default function App() {
@@ -53,6 +55,8 @@ export default function App() {
 
   // Admin Logged Session state
   const [isAdmin, setIsAdmin] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('5511999999999');
+  const [instagramSettings, setInstagramSettings] = useState({ username: '@mimoopersonalizados', url: 'https://instagram.com/mimoopersonalizados' });
 
   useEffect(() => {
     // Save cart state
@@ -64,21 +68,49 @@ export default function App() {
     fetchInitialData();
   }, []);
 
+  useEffect(() => {
+    // Sync configurations when shifting across active tabs to reflect in footer/floating button immediately
+    const syncConfig = async () => {
+      try {
+        const [wa, insta, adminSession] = await Promise.all([
+          api.getWhatsAppNumber(),
+          api.getInstagramSettings(),
+          api.isAdminLoggedIn()
+        ]);
+        setWhatsappNumber(wa);
+        setInstagramSettings(insta);
+        setIsAdmin(adminSession);
+        
+        if (adminSession) {
+          const latestOrders = await api.getOrders();
+          setOrders(latestOrders);
+        }
+      } catch (err) {
+        console.error('Error syncing config:', err);
+      }
+    };
+    syncConfig();
+  }, [activeTab]);
+
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [p, c, b, o, adminSession] = await Promise.all([
+      const [p, c, b, o, adminSession, wa, insta] = await Promise.all([
         api.getProducts(false), // Fetch active ones only for client storefront
         api.getCategories(),
         api.getBanners(),
         api.getOrders(),
-        api.isAdminLoggedIn()
+        api.isAdminLoggedIn(),
+        api.getWhatsAppNumber(),
+        api.getInstagramSettings()
       ]);
       setProducts(p);
       setCategories(c);
       setBanners(b);
       setOrders(o);
       setIsAdmin(adminSession);
+      setWhatsappNumber(wa);
+      setInstagramSettings(insta);
     } catch (err) {
       console.error('Error fetching storefront data:', err);
     } finally {
@@ -448,6 +480,53 @@ export default function App() {
             </>
           )}
         </main>
+
+        {/* Modern, responsive Footer */}
+        <footer className="bg-white border-t border-slate-100 py-12 px-6 mt-auto">
+          <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-6">
+            <div className="space-y-2">
+              <h3 className="font-extrabold text-slate-900 tracking-tight text-base flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-blue-700 rounded-full animate-pulse"></span>
+                Mimoo Personalizados © 2026
+              </h3>
+              <p className="text-slate-500 text-xs italic">Criando presentes únicos e momentos inesquecíveis.</p>
+            </div>
+
+            {/* Configurable Instagram Profile direct outbound link */}
+            {instagramSettings && instagramSettings.username && (
+              <a
+                href={instagramSettings.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-slate-50 hover:bg-pink-50 border border-slate-100 hover:border-pink-200 text-slate-700 hover:text-pink-600 px-4 py-2 rounded-2xl text-xs font-semibold transition-all shadow-sm group active:scale-95"
+              >
+                <Instagram size={14} className="text-pink-500 group-hover:scale-110 transition-transform" />
+                <span>{instagramSettings.username}</span>
+              </a>
+            )}
+
+            <div className="pt-4 border-t border-slate-100 w-full text-[10px] text-slate-400 font-mono flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span>Tecnologia de ponta em personalização ✨</span>
+              <span>
+                Desenvolvido por <strong className="font-bold text-slate-600">Adriano Costa</strong>.
+              </span>
+            </div>
+          </div>
+        </footer>
+
+        {/* Floating WhatsApp Action Button (visible above bottom nav on mobile) */}
+        <a
+          href={`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=Ol%C3%A1!%20Gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20personalizados.`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white p-3.5 sm:p-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.3)] transition-all duration-350 hover:-translate-y-1.5 z-50 flex items-center justify-center cursor-pointer group"
+          title="Fale Conosco no WhatsApp"
+        >
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-out whitespace-nowrap text-xs font-black uppercase tracking-wider text-white select-none">
+            Fale Conosco&nbsp;&nbsp;
+          </span>
+          <MessageCircle size={20} className="fill-white/10 group-hover:rotate-12 transition-transform duration-300" />
+        </a>
 
         {/* Sticky Mobile Fixed navigation footer bar */}
         <nav

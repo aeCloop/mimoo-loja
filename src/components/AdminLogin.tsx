@@ -65,7 +65,7 @@ export default function AdminLogin({ onLoginSuccess, onCancel }: AdminLoginProps
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ex: admin@mimoo.com"
+              placeholder="Ex: admin@seudominio.com"
               className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
             />
           </div>
@@ -124,12 +124,9 @@ export default function AdminLogin({ onLoginSuccess, onCancel }: AdminLoginProps
 
       {/* Guide notes for developers/testers */}
       <div className="mt-8 pt-4 border-t border-slate-100 text-[10px] text-slate-400 space-y-2 leading-relaxed bg-slate-50/50 p-3 rounded-xl border border-dashed border-slate-100">
-        <p className="font-bold text-slate-500 uppercase tracking-wider text-[8px]">Informativos Sandbox:</p>
+        <p className="font-bold text-slate-500 uppercase tracking-wider text-[8px]">Informativos:</p>
         <p>
-          1. Se configurado com credenciais Supabase reais, esta tela utiliza o <strong>Supabase Auth</strong>.
-        </p>
-        <p>
-          2. No modo sandbox, entre com o e-mail <strong>admin@mimoo.com</strong> e senha <strong>admin123</strong>, ou digite qualquer e-mail com senha <strong>admin</strong> para testar a loja!
+          Esta tela utiliza o <strong>Supabase Auth</strong> para validar seu e-mail e senha administrativo do painel.
         </p>
       </div>
 

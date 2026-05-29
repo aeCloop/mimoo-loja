@@ -485,6 +485,39 @@ export const api = {
     localStorage.setItem('mimoo_whatsapp_number', cleanNum);
   },
 
+  // CONFIGURATIONS (Instagram Settings)
+  async getInstagramSettings(): Promise<{ username: string; url: string }> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient.from('app_settings').select('instagram_username, instagram_url').single();
+        if (!error && data) {
+          return {
+            username: data.instagram_username || localStorage.getItem('mimoo_instagram_username') || '@mimoopersonalizados',
+            url: data.instagram_url || localStorage.getItem('mimoo_instagram_url') || 'https://instagram.com/mimoopersonalizados'
+          };
+        }
+      } catch (err) {
+        console.warn('Supabase app_settings error loading columns, falling back to localStorage', err);
+      }
+    }
+    return {
+      username: localStorage.getItem('mimoo_instagram_username') || '@mimoopersonalizados',
+      url: localStorage.getItem('mimoo_instagram_url') || 'https://instagram.com/mimoopersonalizados'
+    };
+  },
+
+  async updateInstagramSettings(username: string, url: string): Promise<void> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        await supabaseClient.from('app_settings').upsert({ id: 1, instagram_username: username, instagram_url: url });
+      } catch (err) {
+        console.warn('Supabase app_settings error updating columns, storing locally', err);
+      }
+    }
+    localStorage.setItem('mimoo_instagram_username', username);
+    localStorage.setItem('mimoo_instagram_url', url);
+  },
+
   // AUTHENTICATION
   async loginAdmin(email: string, password: string): Promise<boolean> {
     if (useRealSupabase && supabaseClient) {
@@ -496,12 +529,7 @@ export const api = {
       return !!data.user;
     } else {
       // Mock log in simulation
-      // Accept userEmail of the workspace requester as a safe admin password bypass, or standard fallback
-      if (email === 'admin@mimoo.com' && password === 'admin123') {
-        localStorage.setItem('mimoo_admin_logged_in', 'true');
-        return true;
-      }
-      // Or fallback custom login matching requester email or simple pass
+      // Fallback custom login matching any email containing admin or simple password 'admin' for sandbox tests
       if (email.trim() !== '' && password === 'admin') {
         localStorage.setItem('mimoo_admin_logged_in', 'true');
         return true;

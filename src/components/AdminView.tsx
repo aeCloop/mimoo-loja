@@ -24,7 +24,8 @@ import {
   PlusCircle,
   Phone,
   Image as ImageIcon,
-  CheckCircle2
+  CheckCircle2,
+  Instagram
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -43,6 +44,8 @@ export default function AdminView({ onLogout }: AdminViewProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [instagramUsername, setInstagramUsername] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
 
   // Loading/Operation states
   const [loading, setLoading] = useState(true);
@@ -80,13 +83,14 @@ export default function AdminView({ onLogout }: AdminViewProps) {
     setLoading(true);
     setErrorMsg('');
     try {
-      const [o, p, l, c, b, wa] = await Promise.all([
+      const [o, p, l, c, b, wa, insta] = await Promise.all([
         api.getOrders(),
         api.getProducts(true), // Include inactive too for admin CRUD
         api.getProductLots(),
         api.getCategories(),
         api.getBanners(),
-        api.getWhatsAppNumber()
+        api.getWhatsAppNumber(),
+        api.getInstagramSettings()
       ]);
       setOrders(o);
       setProducts(p);
@@ -94,6 +98,8 @@ export default function AdminView({ onLogout }: AdminViewProps) {
       setCategories(c);
       setBanners(b);
       setWhatsappNumber(wa);
+      setInstagramUsername(insta.username);
+      setInstagramUrl(insta.url);
       
       if (p.length > 0) {
         setNewLotProdId(p[0].id);
@@ -297,9 +303,20 @@ export default function AdminView({ onLogout }: AdminViewProps) {
     e.preventDefault();
     try {
       await api.updateWhatsAppNumber(whatsappNumber);
-      showSuccess('Número de vendas atualizado!');
+      showSuccess('Número de vendas updated!');
     } catch (err: any) {
       setErrorMsg('Erro ao salvar configurações de WhatsApp.');
+    }
+  };
+
+  // 7. INSTAGRAM SAVE
+  const handleSaveInstagram = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.updateInstagramSettings(instagramUsername, instagramUrl);
+      showSuccess('Instagram da loja atualizado!');
+    } catch (err: any) {
+      setErrorMsg('Erro ao salvar as configurações do Instagram da Loja.');
     }
   };
 
@@ -874,7 +891,7 @@ export default function AdminView({ onLogout }: AdminViewProps) {
 
           {/* 4. CONFIG SECTION */}
           {activeTab === 'config' && (
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 md:p-6 shadow-sm max-w-xl mx-auto space-y-6">
+            <div className="bg-white border border-slate-100 rounded-3xl p-5 md:p-6 shadow-sm max-w-xl mx-auto space-y-6 animate-fadeIn">
               
               {/* WhatsApp Config Setting */}
               <div>
@@ -909,6 +926,58 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                 <p className="text-[10px] text-slate-400 mt-2">
                   * Importante: Digite apenas números, incluindo o DDI (Ex: 55 para Brasil) e o DDD.
                 </p>
+              </div>
+
+              {/* Instagram Config Setting */}
+              <div className="pt-6 border-t border-slate-100">
+                <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Instagram size={16} className="text-pink-600" />
+                  Instagram da Loja
+                </h4>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  Configure o nome de usuário e o link do do perfil do Instagram para serem exibidos no rodapé do e-commerce:
+                </p>
+
+                <form onSubmit={handleSaveInstagram} className="space-y-4">
+                  <div>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                        @ Usuário:
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        value={instagramUsername}
+                        onChange={(e) => setInstagramUsername(e.target.value)}
+                        placeholder="Ex: @mimoopersonalizados"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-24 pr-4 py-2.5 text-xs focus:border-pink-600 outline-none transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                        🔗 Link:
+                      </span>
+                      <input
+                        type="url"
+                        required
+                        value={instagramUrl}
+                        onChange={(e) => setInstagramUrl(e.target.value)}
+                        placeholder="Ex: https://instagram.com/mimoopersonalizados"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-20 pr-4 py-2.5 text-xs focus:border-pink-600 outline-none transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-opacity"
+                  >
+                    Atualizar Instagram
+                  </button>
+                </form>
               </div>
 
             </div>
