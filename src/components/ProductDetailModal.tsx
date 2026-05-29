@@ -82,7 +82,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
   return (
     <div
       id="product-detail-modal-overlay"
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center transition-opacity duration-300 animate-fadeIn"
+      className="fixed inset-0 bg-slate-900/65 backdrop-blur-sm z-50 flex items-end justify-center transition-opacity duration-300 animate-fadeIn"
     >
       {/* Tap outside to close */}
       <div className="absolute inset-0" onClick={onClose}></div>
@@ -90,17 +90,17 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
       {/* Slide-Up container sheet */}
       <div
         id="product-detail-sheet"
-        className="w-full max-w-2xl bg-[#fbf9f8] rounded-t-[24px] overflow-hidden flex flex-col relative shadow-2xl h-[92vh] max-h-[850px] z-10 select-none animate-slideUp"
+        className="w-full max-w-xl bg-[#faf9f8] rounded-t-[28px] overflow-hidden flex flex-col relative shadow-[0_-8px_40px_rgba(15,23,42,0.15)] h-[90vh] md:h-[80vh] max-h-[780px] z-10 animate-slideUp border-t border-slate-100"
       >
         {/* Grabber indicator & close bar */}
-        <header className="flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-md sticky top-0 z-10 border-b border-rose-50/10">
-          <div className="w-10 h-1.5 rounded-full bg-slate-200 absolute top-2.5 left-1/2 -translate-x-1/2"></div>
-          <h2 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+        <header className="flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100/60">
+          <div className="w-12 h-1 rounded-full bg-slate-200 absolute top-2.5 left-1/2 -translate-x-1/2"></div>
+          <h2 className="font-extrabold text-slate-800 text-sm md:text-base uppercase tracking-wider flex items-center gap-2 mt-1">
             Detalhes do Produto
           </h2>
           <button
             id="close-detail-modal"
-            className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors cursor-pointer active:scale-95"
+            className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-all cursor-pointer active:scale-90"
             onClick={onClose}
           >
             <X size={18} />
@@ -108,63 +108,64 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
         </header>
 
         {/* Scrollable contents */}
-        <div className="flex-1 overflow-y-auto pb-32">
-          {/* Big high quality photo */}
-          <div className="w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-200 overflow-hidden relative">
+        <div className="flex-1 overflow-y-auto pb-32 scrollbar-hide">
+          {/* Big high quality photo with touch visual aspect */}
+          <div className="w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-105 overflow-hidden relative">
             <img
               src={product.image_url}
               alt={product.name}
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
             />
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#faf9f8] to-transparent"></div>
           </div>
 
-          <div className="px-5 py-6">
+          <div className="px-5 py-5 space-y-5">
             {/* Title & Description */}
             <div className="space-y-2">
-              <span className="text-xs uppercase bg-blue-100 text-blue-800 rounded-md font-extrabold px-2.5 py-1 w-fit block">
+              <span className="text-[10px] uppercase bg-blue-600 text-white rounded-md font-black px-2.5 py-1 w-fit block tracking-wider">
                 {product.category}
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-blue-900 leading-tight">
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
                 {product.name}
               </h1>
-              <p className="text-sm text-slate-600 leading-relaxed font-normal">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                 {product.description}
               </p>
             </div>
 
             {/* Toggle switch between Unit vs Lots */}
-            <div className="mt-8">
-              <span className="text-xs font-bold uppercase text-slate-400 block tracking-wider mb-3">
+            <div className="pt-2">
+              <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-3">
                 Modalidade de Compra
               </span>
               
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setPurchaseType('unit')}
-                  className={`flex-1 py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                  className={`py-3 px-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center outline-none ${
                     purchaseType === 'unit'
-                      ? 'border-blue-700 bg-blue-50/50 text-blue-900 shadow-sm'
-                      : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      ? 'border-blue-700 bg-blue-50/40 text-blue-900 shadow-sm'
+                      : 'border-slate-200 text-slate-500 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-xs font-bold uppercase tracking-wider">Compra Unitária</span>
-                  <span className="text-lg font-black">{formatBRL(product.unit_price)}</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Compra Unitária</span>
+                  <span className="text-base font-black text-blue-900">{formatBRL(product.unit_price)}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPurchaseType('lot')}
-                  className={`flex-1 py-3 px-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                  className={`py-3 px-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer text-center outline-none ${
                     purchaseType === 'lot'
-                      ? 'border-blue-700 bg-blue-50/50 text-blue-900 shadow-sm'
-                      : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      ? 'border-blue-700 bg-blue-50/40 text-blue-900 shadow-sm'
+                      : 'border-slate-200 text-slate-500 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-xs font-bold uppercase tracking-wider">Compra por Lotes</span>
-                  <span className="text-xs bg-blue-600 text-white rounded-full px-2.5 py-0.5 font-bold uppercase">
-                    Economize muito!
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Atacado em Lotes</span>
+                  <span className="text-[9px] bg-red-500 text-white rounded-full px-2 py-0.5 font-black uppercase tracking-wide">
+                    Super Desconto
                   </span>
                 </button>
               </div>
@@ -172,8 +173,8 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
 
             {/* Lot Selections Layout */}
             {purchaseType === 'lot' && (
-              <div className="mt-6 space-y-3 animate-slideUp">
-                <h3 className="text-xs font-bold uppercase text-slate-400 block tracking-wider">
+              <div className="space-y-2.5 pt-1 animate-fadeIn">
+                <h3 className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2.5">
                   Escolha o seu lote ideal:
                 </h3>
 
@@ -186,15 +187,15 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
                     <label
                       key={lot.id}
                       onClick={() => setSelectedLot(lot)}
-                      className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all relative ${
+                      className={`flex items-center justify-between p-3.5 border rounded-2xl cursor-pointer transition-all relative ${
                         selectedLot?.id === lot.id
-                          ? 'border-blue-700 bg-blue-50/10 ring-2 ring-blue-700/10'
+                          ? 'border-blue-700 bg-blue-50/10 ring-1 ring-blue-700/5 shadow-sm'
                           : 'border-slate-200 bg-white hover:border-blue-300'
                       }`}
                     >
                       {isBestSeller && (
-                        <div className="absolute -top-3 left-4 bg-orange-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
-                          Mais Vendido / Economia Total
+                        <div className="absolute -top-2.5 left-4 bg-red-650 text-white text-[8px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                          Melhor Custo-Benefício
                         </div>
                       )}
 
@@ -204,27 +205,27 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
                           name="product-lot-selection"
                           checked={selectedLot?.id === lot.id}
                           onChange={() => setSelectedLot(lot)}
-                          className="w-5 h-5 text-blue-700 border-slate-300 focus:ring-blue-500 focus:ring-2"
+                          className="w-4 h-4 text-blue-700 border-slate-300 focus:ring-blue-500 focus:ring-1"
                         />
                         <div>
-                          <span className="font-bold text-slate-800 text-sm block">
-                            Lote com {lot.quantity} unidades
+                          <span className="font-extrabold text-slate-800 text-xs sm:text-sm block">
+                            Lote c/ {lot.quantity} unidades
                           </span>
-                          <span className="text-[10px] bg-emerald-100 text-emerald-800 rounded font-extrabold px-1.5 py-0.5 uppercase tracking-wider mt-0.5 inline-block">
-                            -{discountPct}% Desconto
+                          <span className="text-[9px] bg-emerald-100 text-emerald-800 rounded px-1.5 py-0.5 font-black uppercase tracking-wide mt-1 inline-block">
+                            -{discountPct}% de Economia
                           </span>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <span className="block text-xs text-slate-400 line-through">
+                        <span className="block text-[10px] text-slate-400 line-through">
                           {formatBRL(standardAmount)}
                         </span>
-                        <span className="block font-black text-blue-900 text-base">
+                        <span className="block font-black text-blue-900 text-sm sm:text-base">
                           {formatBRL(lot.price)}
                         </span>
                         <span className="text-[9px] text-slate-400 block">
-                          ({formatBRL(lot.price / lot.quantity)} / un)
+                          ({formatBRL(lot.price / lot.quantity)}/un)
                         </span>
                       </div>
                     </label>
@@ -236,13 +237,13 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
         </div>
 
         {/* Sticky footer action button */}
-        <footer className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-[#fbf9f8] via-[#fbf9f8] to-transparent pt-8 flex gap-3 z-10.">
+        <footer className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-white via-white to-transparent pt-8 flex gap-3 z-10 border-t border-slate-100/60 pb-6">
           <button
             onClick={handleAdd}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0px_8px_30px_rgba(0,86,179,0.15)] cursor-pointer"
+            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3.5 rounded-2xl font-black text-xs md:text-sm uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_6px_20px_rgba(29,78,216,0.3)] cursor-pointer"
           >
-            <ShoppingCart size={16} />
-            Adicionar ao Carrinho —{' '}
+            <ShoppingCart size={15} />
+            Adicionar —{' '}
             {purchaseType === 'unit'
               ? formatBRL(product.unit_price)
               : selectedLot

@@ -300,7 +300,7 @@ export default function App() {
       )}
 
       {/* Main Container structure wrapping mobile or desktop responsive frame */}
-      <div className="w-full max-w-4xl mx-auto min-h-screen flex flex-col bg-[#fbfbfb] shadow-2xl pb-24 relative select-none">
+      <div className="w-full max-w-4xl mx-auto min-h-screen flex flex-col bg-[#fbfbfb] shadow-2xl pb-24 relative">
         
         {/* Top Header branding bar */}
         <header className="sticky top-0 z-40 bg-white border-b border-rose-50/5 flex items-center justify-between px-5 py-4">
