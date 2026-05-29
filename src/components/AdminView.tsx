@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ProductLot, Category, Banner, Order, OrderStatus } from '../types';
 import { api } from '../lib/supabase';
+import ProductGalleryManager from './ProductGalleryManager';
+import { showToast } from '../lib/toast';
 import {
   TrendingUp,
   Package,
@@ -80,6 +82,18 @@ export default function AdminView({ onLogout }: AdminViewProps) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (errorMsg) {
+      showToast(errorMsg, 'error');
+    }
+  }, [errorMsg]);
+
+  useEffect(() => {
+    if (opSuccess) {
+      showToast(opSuccess, 'success');
+    }
+  }, [opSuccess]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -802,6 +816,9 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                               ))}
                             </div>
                           )}
+
+                          {/* Gallery Manager for multiple images support */}
+                          <ProductGalleryManager productId={prod.id} />
                         </div>
                       );
                     })}

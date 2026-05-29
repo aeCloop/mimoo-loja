@@ -53,21 +53,21 @@ export default function ProductCard({ product, onSelect, isPopular = false }: Pr
 
       {/* Item info */}
       <div className="p-3.5 sm:p-4 flex flex-col flex-grow">
-        <span className="text-[9px] uppercase tracking-widest font-black text-blue-600 mb-1 block">
+        <span className="text-[10px] uppercase tracking-widest font-black text-blue-600 mb-1 block">
           {product.category}
         </span>
-        <h3 className="text-xs sm:text-sm font-extrabold text-slate-800 group-hover:text-blue-700 transition-colors line-clamp-1 leading-snug">
+        <h3 className="text-sm sm:text-base font-extrabold text-slate-800 group-hover:text-blue-700 transition-colors line-clamp-1 leading-snug">
           {product.name}
         </h3>
-        <p className="text-[11px] sm:text-xs text-slate-500 mt-1 mb-3 line-clamp-2 leading-relaxed flex-grow">
+        <p className="text-xs sm:text-[13px] text-slate-500 mt-1 mb-3 line-clamp-2 leading-relaxed flex-grow">
           {product.description}
         </p>
 
         {/* Pricing tag footer */}
         <div className="flex items-center justify-between mt-auto pt-2.5 border-t border-slate-50">
           <div>
-            <span className="text-[8px] text-slate-400 block uppercase font-black tracking-wider">A partir de</span>
-            <span className="text-sm sm:text-base font-black text-blue-900 tracking-tight">{formatBRL(product.unit_price)}</span>
+            <span className="text-[9px] text-slate-400 block uppercase font-black tracking-wider">A partir de</span>
+            <span className="text-base sm:text-lg font-black text-blue-900 tracking-tight">{formatBRL(product.unit_price)}</span>
           </div>
           
           <button 

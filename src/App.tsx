@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Product, Category, Banner, CartItem, Order } from './types';
 import { api } from './lib/supabase';
+import { showToast, ToastType } from './lib/toast';
 import BannerCarousel from './components/BannerCarousel';
 import ProductCard from './components/ProductCard';
 import ProductDetailModal from './components/ProductDetailModal';
@@ -27,7 +28,10 @@ import {
   Info,
   ArrowRight,
   Instagram,
-  MessageCircle
+  MessageCircle,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function App() {
@@ -45,7 +49,33 @@ export default function App() {
   // Loading/Interactions States
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [toastMessage, setToastMessage] = useState('');
+  
+  // Toast notifications array state
+  interface ToastItem {
+    id: string;
+    message: string;
+    type: ToastType;
+  }
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  useEffect(() => {
+    const handleToastEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ message: string; type: ToastType; duration?: number }>;
+      const { message, type = 'success', duration = 3000 } = customEvent.detail;
+      const id = `${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
+      
+      setToasts(prev => [...prev, { id, message, type }]);
+
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, duration);
+    };
+
+    window.addEventListener('mimoo-toast', handleToastEvent);
+    return () => {
+      window.removeEventListener('mimoo-toast', handleToastEvent);
+    };
+  }, []);
 
   // Cart Local Storage persistence
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -224,16 +254,13 @@ export default function App() {
     }
   };
 
-  // Toast notifier
-  const triggerToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage('');
-    }, 3000);
+  // Toast notifier matching legacy helper signature
+  const triggerToast = (msg: string, type: ToastType = 'success') => {
+    showToast(msg, type);
   };
 
   // Cart Action Handlers
-  const handleAddToCart = (item: Omit<CartItem, 'id'>) => {
+  const handleAddToCart = (item: Omit<CartItem, 'id'>, buyNow = false) => {
     const itemId = item.type === 'unit' 
       ? `unit-${item.product.id}` 
       : `lot-${item.lotDetails?.lotId}-${item.product.id}`;
@@ -247,7 +274,11 @@ export default function App() {
     });
 
     setSelectedProduct(null);
-    triggerToast('✓ Adicionado ao carrinho com sucesso!');
+    triggerToast('✓ Adicionado ao carrinho com sucesso!', 'success');
+
+    if (buyNow) {
+      setActiveTab('carrinho');
+    }
   };
 
   const handleUpdateQty = (itemId: string, diff: number) => {
@@ -291,13 +322,31 @@ export default function App() {
   return (
     <div id="mimoo-applet-root" className="min-h-screen bg-slate-50 text-slate-800">
       
-      {/* Dynamic Floating Toast notification pill */}
-      {toastMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-blue-900 text-white font-extrabold text-xs uppercase px-5 py-3 rounded-full flex items-center gap-1.5 shadow-lg max-w-sm w-fit border border-blue-800 transition-all duration-300 transform scale-100 select-none">
-          <Sparkles size={13} className="fill-white" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Modern, polished micro-toast container stack */}
+      <div id="toast-container" className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2.5 max-w-sm w-[90%] sm:w-fit pointer-events-none select-none">
+        {toasts.map((t) => {
+          let bgClass = 'bg-emerald-600 border-emerald-500 text-white';
+          let icon = <CheckCircle2 size={16} className="text-white fill-white/10" />;
+          
+          if (t.type === 'error') {
+            bgClass = 'bg-rose-600 border-rose-500 text-white';
+            icon = <AlertCircle size={16} className="text-white fill-white/10" />;
+          } else if (t.type === 'warning') {
+            bgClass = 'bg-amber-500 border-amber-400 text-white shadow-amber-500/20';
+            icon = <AlertTriangle size={16} className="text-white fill-white/10 animate-bounce" />;
+          }
+
+          return (
+            <div
+              key={t.id}
+              className={`flex items-center gap-2.5 px-4.5 py-3 rounded-2xl shadow-xl border text-xs sm:text-sm font-black tracking-wide uppercase transition-all duration-300 transform scale-100 animate-slideDown pointer-events-auto ${bgClass}`}
+            >
+              {icon}
+              <span className="flex-1 text-left leading-tight">{t.message}</span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Main Container structure wrapping mobile or desktop responsive frame */}
       <div className="w-full max-w-4xl mx-auto min-h-screen flex flex-col bg-[#fbfbfb] shadow-2xl pb-24 relative">

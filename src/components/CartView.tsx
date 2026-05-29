@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CartItem, Order, OrderStatus } from '../types';
 import { api } from '../lib/supabase';
+import { showToast } from '../lib/toast';
 import { Trash2, Plus, Minus, Image, ShoppingBag, ShieldAlert, CheckCircle, ArrowRight, UploadCloud } from 'lucide-react';
 
 interface CartViewProps {
@@ -35,6 +36,18 @@ export default function CartView({
   const [uploading, setUploading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (errorMsg) {
+      showToast(errorMsg, 'error');
+    }
+  }, [errorMsg]);
+
+  useEffect(() => {
+    if (successMsg) {
+      showToast(successMsg, 'success');
+    }
+  }, [successMsg]);
   
   // Order Success Overlay state
   const [orderSuccess, setOrderSuccess] = useState<{ id: string; redirectUrl: string } | null>(null);
@@ -278,14 +291,14 @@ export default function CartView({
                 </div>
 
                 <div className="flex-grow">
-                  <span className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">
+                  <span className="text-[11px] uppercase font-extrabold text-blue-600 tracking-wider">
                     {item.product.category}
                   </span>
-                  <h3 className="font-bold text-slate-800 text-sm sm:text-base leading-tight">
+                  <h3 className="font-bold text-slate-800 text-base sm:text-lg leading-tight">
                     {item.product.name}
                   </h3>
                   
-                  <p className="text-xs text-slate-500 font-medium mt-1">
+                  <p className="text-[13px] sm:text-sm text-slate-500 font-medium mt-1">
                     {item.type === 'unit' ? 'Compra Unitária' : `Lote de ${item.lotDetails?.quantity} unidades`}
                   </p>
 
@@ -309,9 +322,9 @@ export default function CartView({
                     </div>
 
                     <div className="text-right">
-                      <p className="text-sm font-extrabold text-slate-950">{formatBRL(totalItemPrice)}</p>
+                      <p className="text-base font-extrabold text-slate-950">{formatBRL(totalItemPrice)}</p>
                       {item.quantity > 1 && (
-                        <p className="text-[10px] text-slate-400">({formatBRL(itemPrice)} un)</p>
+                        <p className="text-[11px] text-slate-400">({formatBRL(itemPrice)} un)</p>
                       )}
                     </div>
                   </div>

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, ProductLot, CartItem } from '../types';
 import { api } from '../lib/supabase';
 import { X, ShoppingCart, Percent, Layers, CheckCircle } from 'lucide-react';
@@ -11,7 +11,7 @@ import { X, ShoppingCart, Percent, Layers, CheckCircle } from 'lucide-react';
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
-  onAddToCart: (item: Omit<CartItem, 'id'>) => void;
+  onAddToCart: (item: Omit<CartItem, 'id'>, buyNow?: boolean) => void;
 }
 
 export default function ProductDetailModal({ product, onClose, onAddToCart }: ProductDetailModalProps) {
@@ -19,6 +19,10 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
   const [selectedLot, setSelectedLot] = useState<ProductLot | null>(null);
   const [lots, setLots] = useState<ProductLot[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [extraImages, setExtraImages] = useState<string[]>([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [imgTouchStart, setImgTouchStart] = useState<number | null>(null);
+  const [imgTouchEnd, setImgTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     if (!product) return;
@@ -27,6 +31,8 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
     setPurchaseType('unit');
     setSelectedLot(null);
     setLoaded(false);
+    setActiveImageIndex(0);
+    setExtraImages([]);
 
     api.getProductLots(product.id).then((fetchedLots) => {
       // If we got real lots, set them.
@@ -49,7 +55,24 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
       console.error('Error fetching product lots:', err);
       setLoaded(true);
     });
+
+    api.getProductImages(product.id).then((imgs) => {
+      setExtraImages(imgs || []);
+    }).catch(err => {
+      console.warn('Error fetching product images:', err);
+    });
   }, [product]);
+
+  const allImages = product ? [product.image_url, ...extraImages].filter(Boolean) : [];
+
+  // Auto advance image carousel
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveImageIndex(prev => (prev + 1) % allImages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [allImages.length]);
 
   if (!product) return null;
 
@@ -57,13 +80,33 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  const handleAdd = () => {
+  const handleImgTouchStart = (e: React.TouchEvent) => {
+    setImgTouchEnd(null);
+    setImgTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleImgTouchMove = (e: React.TouchEvent) => {
+    setImgTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleImgTouchEnd = () => {
+    if (!imgTouchStart || !imgTouchEnd || allImages.length <= 1) return;
+    const diff = imgTouchStart - imgTouchEnd;
+    const minDistance = 50;
+    if (diff > minDistance) {
+      setActiveImageIndex(prev => (prev + 1) % allImages.length);
+    } else if (diff < -minDistance) {
+      setActiveImageIndex(prev => (prev - 1 + allImages.length) % allImages.length);
+    }
+  };
+
+  const handleAdd = (buyNow = false) => {
     if (purchaseType === 'unit') {
       onAddToCart({
         product,
         type: 'unit',
         quantity: 1,
-      });
+      }, buyNow);
     } else {
       if (!selectedLot) return;
       onAddToCart({
@@ -75,7 +118,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
           quantity: selectedLot.quantity,
           price: selectedLot.price
         }
-      });
+      }, buyNow);
     }
   };
 
@@ -109,27 +152,63 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
 
         {/* Scrollable contents */}
         <div className="flex-1 overflow-y-auto pb-32 scrollbar-hide">
-          {/* Big high quality photo with touch visual aspect */}
-          <div className="w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-105 overflow-hidden relative">
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#faf9f8] to-transparent"></div>
+          {/* Slider/Carousel for multiple/single images */}
+          <div 
+            className="w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-100 overflow-hidden relative group"
+            onTouchStart={handleImgTouchStart}
+            onTouchMove={handleImgTouchMove}
+            onTouchEnd={handleImgTouchEnd}
+          >
+            {allImages.length > 1 ? (
+              <>
+                {allImages.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`${product.name} - Amostra ${i + 1}`}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
+                      i === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                    }`}
+                    referrerPolicy="no-referrer"
+                  />
+                ))}
+                
+                {/* Horizontal Indicators Bullets List */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 bg-black/35 backdrop-blur-md px-2.5 py-1 rounded-full">
+                  {allImages.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveImageIndex(i)}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        i === activeImageIndex ? 'bg-white w-3.5' : 'bg-white/50 hover:bg-white/80'
+                      }`}
+                      aria-label={`Visualizar imagem ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            )}
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#faf9f8] to-transparent z-10"></div>
           </div>
 
           <div className="px-5 py-5 space-y-5">
-            {/* Title & Description */}
+            {/* Title & Description enlarged discretely by 10% to 15% */}
             <div className="space-y-2">
-              <span className="text-[10px] uppercase bg-blue-600 text-white rounded-md font-black px-2.5 py-1 w-fit block tracking-wider">
+              <span className="text-[11px] uppercase bg-blue-600 text-white rounded-md font-black px-2.5 py-1 w-fit block tracking-wider">
                 {product.category}
               </span>
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
                 {product.name}
               </h1>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-semibold">
                 {product.description}
               </p>
             </div>
@@ -236,19 +315,28 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
           </div>
         </div>
 
-        {/* Sticky footer action button */}
-        <footer className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-white via-white to-transparent pt-8 flex gap-3 z-10 border-t border-slate-100/60 pb-6">
+        {/* Sticky footer double action buttons */}
+        <footer className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-white via-white to-transparent pt-8 flex gap-2.5 z-10 border-t border-slate-100/60 pb-6">
           <button
-            onClick={handleAdd}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3.5 rounded-2xl font-black text-xs md:text-sm uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_6px_20px_rgba(29,78,216,0.3)] cursor-pointer"
+            type="button"
+            onClick={() => handleAdd(false)}
+            className="flex-1 bg-slate-100 hover:bg-slate-250 text-slate-800 py-3.5 rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer border border-slate-200/40"
           >
-            <ShoppingCart size={15} />
-            Adicionar —{' '}
+            <ShoppingCart size={13} />
+            Add ao Carrinho
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => handleAdd(true)}
+            className="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-3.5 rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-[0_6px_20px_rgba(29,78,216,0.25)] cursor-pointer"
+          >
+            Comprar Agora —{' '}
             {purchaseType === 'unit'
               ? formatBRL(product.unit_price)
               : selectedLot
               ? formatBRL(selectedLot.price)
-              : 'Selecione o Lote'}
+              : 'Selecione'}
           </button>
         </footer>
       </div>

@@ -735,5 +735,79 @@ export const api = {
         reader.readAsDataURL(file);
       });
     }
+  },
+
+  // PRODUCT ADDITIONAL IMAGES
+  async getProductImages(productId: string): Promise<string[]> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('product_images')
+          .select('image_url')
+          .eq('product_id', productId)
+          .order('sort_order', { ascending: true });
+        
+        if (!error && data) {
+          return data.map(item => item.image_url);
+        }
+      } catch (err) {
+        console.warn('Could not query product_images table, using localStorage fallback', err);
+      }
+    }
+    const list = getStored<{ id: string; product_id: string; image_url: string; sort_order: number }[]>('product_images', []);
+    return list
+      .filter(item => item.product_id === productId)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(item => item.image_url);
+  },
+
+  async addProductImage(productId: string, imageUrl: string): Promise<void> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        const { data: existing } = await supabaseClient
+          .from('product_images')
+          .select('sort_order')
+          .eq('product_id', productId);
+        
+        const nextOrder = (existing?.length || 0) + 1;
+        
+        const { error } = await supabaseClient
+          .from('product_images')
+          .insert([{ product_id: productId, image_url: imageUrl, sort_order: nextOrder }]);
+        
+        if (!error) return;
+        console.warn('Insert in product_images table failed, saving locally', error);
+      } catch (err) {
+        console.warn('Error inserting in product_images table, saving locally', err);
+      }
+    }
+    const list = getStored<{ id: string; product_id: string; image_url: string; sort_order: number }[]>('product_images', []);
+    const nextOrder = list.filter(item => item.product_id === productId).length + 1;
+    const newItem = {
+      id: 'img-' + Date.now() + Math.random().toString(36).substring(2, 5),
+      product_id: productId,
+      image_url: imageUrl,
+      sort_order: nextOrder
+    };
+    setStored('product_images', [...list, newItem]);
+  },
+
+  async deleteProductImage(productId: string, imageUrl: string): Promise<void> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        const { error } = await supabaseClient
+          .from('product_images')
+          .delete()
+          .eq('product_id', productId)
+          .eq('image_url', imageUrl);
+        
+        if (!error) return;
+        console.warn('Deletation in product_images table failed, deleting locally', error);
+      } catch (err) {
+        console.warn('Error deleting in product_images table, deleting locally', err);
+      }
+    }
+    const list = getStored<{ id: string; product_id: string; image_url: string; sort_order: number }[]>('product_images', []);
+    setStored('product_images', list.filter(item => !(item.product_id === productId && item.image_url === imageUrl)));
   }
 };

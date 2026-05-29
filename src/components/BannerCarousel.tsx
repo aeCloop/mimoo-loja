@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Banner } from '../types';
 
 interface BannerCarouselProps {
@@ -12,6 +12,8 @@ interface BannerCarouselProps {
 
 export default function BannerCarousel({ banners }: BannerCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const activeBanners = banners.filter(b => b.active);
 
@@ -22,6 +24,28 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
     }, 4500);
     return () => clearInterval(interval);
   }, [activeBanners.length]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd || activeBanners.length <= 1) return;
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
+    if (distance > minSwipeDistance) {
+      // Swiped Left - Show Next Slide
+      setCurrentIndex(prev => (prev + 1) % activeBanners.length);
+    } else if (distance < -minSwipeDistance) {
+      // Swiped Right - Show Previous Slide
+      setCurrentIndex(prev => (prev - 1 + activeBanners.length) % activeBanners.length);
+    }
+  };
 
   if (activeBanners.length === 0) {
     return (
@@ -39,7 +63,13 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
   }
 
   return (
-    <div id="banner-carousel" className="w-full h-44 sm:h-64 md:h-80 bg-slate-100 rounded-2xl overflow-hidden relative shadow-md group">
+    <div 
+      id="banner-carousel" 
+      className="w-full h-44 sm:h-64 md:h-80 bg-slate-100 rounded-2xl overflow-hidden relative shadow-md group"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {activeBanners.map((banner, index) => (
         <div
           key={banner.id}
@@ -52,25 +82,25 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
             alt="Promotional banner"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-5 sm:p-8 text-white">
-            <span className="bg-blue-600/90 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full w-fit mb-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent flex flex-col justify-end p-5 pb-8 sm:p-8 text-white">
+            <span className="bg-blue-600/90 text-white text-[9px] sm:text-xs font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full w-fit mb-1.5 sm:mb-2 shadow-sm">
               Destaque Especial
             </span>
-            <h3 className="text-lg sm:text-2xl font-bold tracking-tight">Impressione com Brindes Incríveis</h3>
-            <p className="text-white/90 text-xs sm:text-sm mt-1">Alta qualidade e descontos para atacado.</p>
+            <h3 className="text-sm sm:text-2xl font-black tracking-tight leading-tight md:leading-normal">Impressione com Brindes Incríveis</h3>
+            <p className="text-white/90 text-[11px] sm:text-sm mt-0.5">Alta qualidade e descontos para atacado.</p>
           </div>
         </div>
       ))}
 
       {/* Slide Navigation indicators */}
       {activeBanners.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 bg-black/25 backdrop-blur-md px-2.5 py-1.5 rounded-full">
+        <div className="absolute bottom-1.5 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1 sm:gap-1.5 bg-black/35 backdrop-blur-md px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full">
           {activeBanners.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                idx === currentIndex ? 'bg-white w-4' : 'bg-white/50 hover:bg-white/80'
+              className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all ${
+                idx === currentIndex ? 'bg-white w-3 sm:w-4' : 'bg-white/45 hover:bg-white/85'
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />
