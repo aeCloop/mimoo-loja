@@ -4,12 +4,17 @@
   "description": "Criando presentes únicos e momentos inesquecíveis.",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=192",
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&q=80&w=512",
+      "src": "/icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     }

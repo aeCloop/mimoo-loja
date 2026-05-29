@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" rx="128" fill="#1d4ed8" />
+  <!-- Sparkles -->
+  <path d="M150 120 L160 140 L180 150 L160 160 L150 180 L140 160 L120 150 L140 140 Z" fill="#ffffff" opacity="0.9" />
+  <path d="M380 340 L387 354 L401 360 L387 366 L380 380 L373 366 L359 360 L373 354 Z" fill="#ffffff" opacity="0.9" />
+  
+  <!-- Gift Box Base -->
+  <rect x="156" y="240" width="200" height="160" rx="16" fill="#ffffff" />
+  <!-- Gift Box Lid -->
+  <rect x="136" y="200" width="240" height="48" rx="8" fill="#ffffff" />
+  
+  <!-- Ribbon Vertical -->
+  <rect x="236" y="200" width="40" height="200" fill="#f43f5e" />
+  <!-- Ribbon Horizontal -->
+  <rect x="136" y="246" width="240" height="30" fill="#f43f5e" />
+  
+  <!-- Ribbon Bow -->
+  <path d="M256 200 C210 130 150 180 236 200 Z" fill="#f43f5e" />
+  <path d="M256 200 C302 130 362 180 276 200 Z" fill="#f43f5e" />
+  
+  <circle cx="256" cy="200" r="15" fill="#f43f5e" />
+</svg>

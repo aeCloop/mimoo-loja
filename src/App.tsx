@@ -662,9 +662,18 @@ export default function App() {
         {showInstallBanner && (
           <div className="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm bg-white border border-slate-100 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] p-4 z-50 animate-fadeIn space-y-3">
             <div className="flex gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md flex-shrink-0">
-                <Sparkles size={20} className="fill-white" />
-              </div>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Mimoo Logo"
+                  className="w-10 h-10 rounded-xl object-cover shadow-md flex-shrink-0"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md flex-shrink-0">
+                  <Sparkles size={20} className="fill-white" />
+                </div>
+              )}
               <div className="space-y-1">
                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Mimoo Personalizados</h4>
                 <p className="text-xs text-slate-600 leading-snug">
