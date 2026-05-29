@@ -1,0 +1,6 @@
+{
+  "name": "Mimoo Personalizados",
+  "description": "Uma plataforma moderna e responsiva de e-commerce e gestão para produtos personalizados.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
