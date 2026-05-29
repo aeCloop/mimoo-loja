@@ -151,7 +151,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
         </header>
 
         {/* Scrollable contents */}
-        <div className="flex-1 overflow-y-auto pb-32 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto pb-6 scrollbar-hide">
           {/* Slider/Carousel for multiple/single images */}
           <div 
             className="w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-100 overflow-hidden relative group"
@@ -252,12 +252,12 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
 
             {/* Lot Selections Layout */}
             {purchaseType === 'lot' && (
-              <div className="space-y-2.5 pt-1 animate-fadeIn">
+              <div className="space-y-3.5 pt-1.5 animate-fadeIn">
                 <h3 className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2.5">
                   Escolha o seu lote ideal:
                 </h3>
 
-                {lots.map((lot) => {
+                {lots.map((lot, index) => {
                   const standardAmount = product.unit_price * lot.quantity;
                   const discountPct = Math.round((1 - lot.price / standardAmount) * 100);
                   const isBestSeller = lot.quantity === 100;
@@ -266,14 +266,17 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
                     <label
                       key={lot.id}
                       onClick={() => setSelectedLot(lot)}
+                      style={{ zIndex: index === 0 ? 30 : 20 - index }}
                       className={`flex items-center justify-between p-3.5 border rounded-2xl cursor-pointer transition-all relative ${
+                        isBestSeller ? 'mt-4' : ''
+                      } ${
                         selectedLot?.id === lot.id
                           ? 'border-blue-700 bg-blue-50/10 ring-1 ring-blue-700/5 shadow-sm'
                           : 'border-slate-200 bg-white hover:border-blue-300'
                       }`}
                     >
                       {isBestSeller && (
-                        <div className="absolute -top-2.5 left-4 bg-red-650 text-white text-[8px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                        <div className="absolute -top-2.5 left-4 bg-rose-600 text-white text-[8px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-md z-40 animate-pulse">
                           Melhor Custo-Benefício
                         </div>
                       )}
@@ -316,7 +319,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
         </div>
 
         {/* Sticky footer double action buttons */}
-        <footer className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-white via-white to-transparent pt-8 flex gap-2.5 z-10 border-t border-slate-100/60 pb-6">
+        <footer className="flex-none p-4 bg-white border-t border-slate-200/80 flex gap-2.5 z-10 pb-6 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
           <button
             type="button"
             onClick={() => handleAdd(false)}

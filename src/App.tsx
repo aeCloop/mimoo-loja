@@ -480,7 +480,7 @@ export default function App() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      {filteredProducts.slice(0, 4).map((prod) => (
+                      {filteredProducts.map((prod) => (
                         <ProductCard
                           key={prod.id}
                           product={prod}
@@ -491,27 +491,46 @@ export default function App() {
                     </div>
                   </section>
 
-                  {/* Visual promotional tag line */}
-                  <section className="bg-gradient-to-r from-blue-700 to-blue-500 rounded-3xl p-5 text-white flex items-center justify-between gap-4 shadow-md">
-                    <div className="space-y-1">
-                      <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                        Qualidade Máxima
-                      </span>
-                      <h4 className="font-black text-sm sm:text-base tracking-tight leading-tight pt-1">
-                        Desconto real progressivo em compras coletivas!
-                      </h4>
-                      <p className="text-[10px] text-white/80">Confira a modalidade em Lotes na página de produtos.</p>
+                  {/* WhatsApp Conversion Support Card */}
+                  <section className="bg-gradient-to-br from-emerald-50 to-emerald-100/40 border border-emerald-500/20 rounded-3xl p-5 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all">
+                    <div className="space-y-3.5 max-w-xl text-left">
+                      <div className="space-y-1">
+                        <span className="text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
+                          Suporte Imediato
+                        </span>
+                        <h4 className="font-extrabold text-base text-slate-800 tracking-tight leading-tight pt-0.5">
+                          💬 Precisa de ajuda com seu pedido?
+                        </h4>
+                        <p className="text-xs text-slate-500 leading-normal font-medium">
+                          Fale diretamente conosco para tirar dúvidas, solicitar orçamento, enviar sua arte ou receber atendimento personalizado.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs font-semibold text-slate-600">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/50 border border-emerald-500/5 rounded-xl">
+                          <span>✅</span> Resposta rápida
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/50 border border-emerald-500/5 rounded-xl">
+                          <span>✅</span> Atendimento personalizado
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/50 border border-emerald-500/5 rounded-xl">
+                          <span>✅</span> Envio de artes e fotos
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/50 border border-emerald-500/5 rounded-xl">
+                          <span>✅</span> Orçamentos sem compromisso
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('Todos');
-                        setActiveTab('produtos');
-                      }}
-                      className="bg-white text-blue-900 py-2.5 px-4 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 shadow-sm min-w-max flex items-center gap-1"
+
+                    <a
+                      href={`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent('Olá, gostaria de tirar algumas dúvidas ou solicitar um orçamento de produto personalizado na Mimoo!')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl py-3.5 px-5 shadow-sm hover:shadow-emerald-500/10 active:scale-95 transition-all text-center flex items-center justify-center gap-2 min-w-[180px] w-full md:w-auto"
                     >
-                      Ver Atacado
-                      <ArrowRight size={12} />
-                    </button>
+                      <span className="text-sm">🟢</span>
+                      Falar no WhatsApp
+                    </a>
                   </section>
 
                 </div>
