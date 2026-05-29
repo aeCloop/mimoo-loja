@@ -46,6 +46,8 @@ export default function AdminView({ onLogout }: AdminViewProps) {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [instagramUsername, setInstagramUsername] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Loading/Operation states
   const [loading, setLoading] = useState(true);
@@ -83,14 +85,15 @@ export default function AdminView({ onLogout }: AdminViewProps) {
     setLoading(true);
     setErrorMsg('');
     try {
-      const [o, p, l, c, b, wa, insta] = await Promise.all([
+      const [o, p, l, c, b, wa, insta, logo] = await Promise.all([
         api.getOrders(),
         api.getProducts(true), // Include inactive too for admin CRUD
         api.getProductLots(),
         api.getCategories(),
         api.getBanners(),
         api.getWhatsAppNumber(),
-        api.getInstagramSettings()
+        api.getInstagramSettings(),
+        api.getStoreLogoUrl()
       ]);
       setOrders(o);
       setProducts(p);
@@ -100,6 +103,7 @@ export default function AdminView({ onLogout }: AdminViewProps) {
       setWhatsappNumber(wa);
       setInstagramUsername(insta.username);
       setInstagramUrl(insta.url);
+      setLogoUrl(logo);
       
       if (p.length > 0) {
         setNewLotProdId(p[0].id);
@@ -317,6 +321,35 @@ export default function AdminView({ onLogout }: AdminViewProps) {
       showSuccess('Instagram da loja atualizado!');
     } catch (err: any) {
       setErrorMsg('Erro ao salvar as configurações do Instagram da Loja.');
+    }
+  };
+
+  // 8. LOGO SAVE & UPLOAD
+  const handleSaveLogo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.updateStoreLogoUrl(logoUrl);
+      showSuccess('Logo da loja atualizado!');
+    } catch (err: any) {
+      setErrorMsg('Erro ao salvar as configurações de Logo da Loja.');
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setErrorMsg('');
+    try {
+      const url = await api.uploadImage(file, 'logos');
+      setLogoUrl(url);
+      await api.updateStoreLogoUrl(url);
+      showSuccess('Imagem do logotipo carregada e atualizada com sucesso!');
+    } catch (err: any) {
+      setErrorMsg('Falha ao subir logotipo para o Storage: ' + (err.message || err));
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -978,6 +1011,74 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                     Atualizar Instagram
                   </button>
                 </form>
+              </div>
+
+              {/* Store Logo Config Setting */}
+              <div className="pt-6 border-t border-slate-100">
+                <h4 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Sparkles size={16} className="text-blue-700" />
+                  Logo da Loja
+                </h4>
+                <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                  Envie uma imagem quadrada ou com fundo transparente para representar o logotipo oficial da sua loja no cabeçalho do e-commerce:
+                </p>
+
+                <div className="space-y-4">
+                  {/* Current logo preview box */}
+                  <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="w-16 h-16 rounded-2xl border bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="Logo Atual" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="text-slate-300 font-extrabold text-[10px] text-center uppercase tracking-wide px-1">Sem Logo</div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-700">Logotipo no Cabeçalho</p>
+                      <p className="text-[10px] text-slate-400">Tamanho sugerido: 120x120 pixels</p>
+                    </div>
+                  </div>
+
+                  {/* File Upload Selector */}
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="admin-logo-uploader"
+                      onChange={handleLogoUpload}
+                      disabled={uploadingLogo}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="admin-logo-uploader"
+                      className="w-full h-11 flex items-center justify-center bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-dashed border-slate-300 hover:border-slate-400 text-slate-600 text-xs font-black uppercase tracking-wider rounded-2xl cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      {uploadingLogo ? 'Subindo Logotipo...' : 'Fazer Upload do Logo'}
+                    </label>
+                  </div>
+
+                  {/* Manual URL field fallback */}
+                  <form onSubmit={handleSaveLogo} className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5">
+                        Ou insira a URL da imagem diretamente:
+                      </label>
+                      <input
+                        type="url"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="Ex: https://..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:border-blue-700 outline-none transition-all font-mono"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer"
+                    >
+                      Salvar URL do Logo
+                    </button>
+                  </form>
+                </div>
               </div>
 
             </div>

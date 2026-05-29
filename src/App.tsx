@@ -57,6 +57,11 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState('5511999999999');
   const [instagramSettings, setInstagramSettings] = useState({ username: '@mimoopersonalizados', url: 'https://instagram.com/mimoopersonalizados' });
+  const [logoUrl, setLogoUrl] = useState('');
+
+  // PWA installation states
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   useEffect(() => {
     // Save cart state
@@ -69,16 +74,61 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // Register service worker if supported
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => console.log('Service Worker registered successfully!', reg.scope))
+        .catch((err) => console.warn('Service Worker registration failed:', err));
+    }
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      
+      const dismissed = sessionStorage.getItem('mimoo_install_dismissed');
+      if (!dismissed) {
+        setShowInstallBanner(true);
+      }
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try {
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to install: ${outcome}`);
+    } catch (err) {
+      console.error(err);
+    }
+    setDeferredPrompt(null);
+    setShowInstallBanner(false);
+  };
+
+  const handleDismissInstall = () => {
+    sessionStorage.setItem('mimoo_install_dismissed', 'true');
+    setShowInstallBanner(false);
+  };
+
+  useEffect(() => {
     // Sync configurations when shifting across active tabs to reflect in footer/floating button immediately
     const syncConfig = async () => {
       try {
-        const [wa, insta, adminSession] = await Promise.all([
+        const [wa, insta, logo, adminSession] = await Promise.all([
           api.getWhatsAppNumber(),
           api.getInstagramSettings(),
+          api.getStoreLogoUrl(),
           api.isAdminLoggedIn()
         ]);
         setWhatsappNumber(wa);
         setInstagramSettings(insta);
+        setLogoUrl(logo);
         setIsAdmin(adminSession);
         
         if (adminSession) {
@@ -95,14 +145,15 @@ export default function App() {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [p, c, b, o, adminSession, wa, insta] = await Promise.all([
+      const [p, c, b, o, adminSession, wa, insta, logo] = await Promise.all([
         api.getProducts(false), // Fetch active ones only for client storefront
         api.getCategories(),
         api.getBanners(),
         api.getOrders(),
         api.isAdminLoggedIn(),
         api.getWhatsAppNumber(),
-        api.getInstagramSettings()
+        api.getInstagramSettings(),
+        api.getStoreLogoUrl()
       ]);
       setProducts(p);
       setCategories(c);
@@ -111,6 +162,7 @@ export default function App() {
       setIsAdmin(adminSession);
       setWhatsappNumber(wa);
       setInstagramSettings(insta);
+      setLogoUrl(logo);
     } catch (err) {
       console.error('Error fetching storefront data:', err);
     } finally {
@@ -203,9 +255,18 @@ export default function App() {
             onClick={() => setActiveTab('inicio')}
             className="flex items-center gap-2 cursor-pointer active:scale-95 transition-transform"
           >
-            <div className="w-8 h-8 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md">
-              <Gift size={18} className="fill-white" />
-            </div>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Logo Mimoo"
+                className="w-8 h-8 rounded-xl object-cover shadow-md"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md">
+                <Gift size={18} className="fill-white" />
+              </div>
+            )}
             <div>
               <h1 className="font-black text-slate-800 text-base leading-none tracking-tight">
                 Mimoo <span className="text-blue-700">Personalizados</span>
@@ -596,6 +657,37 @@ export default function App() {
           onClose={() => setSelectedProduct(null)}
           onAddToCart={handleAddToCart}
         />
+
+        {/* PWA Discrete Install Prompt Card */}
+        {showInstallBanner && (
+          <div className="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm bg-white border border-slate-100 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] p-4 z-50 animate-fadeIn space-y-3">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center shadow-md flex-shrink-0">
+                <Sparkles size={20} className="fill-white" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Mimoo Personalizados</h4>
+                <p className="text-xs text-slate-600 leading-snug">
+                  Instale o app da Mimoo Personalizados no seu celular para acessar mais rápido.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={handleDismissInstall}
+                className="px-3.5 py-2 text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[11px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+              >
+                Agora não
+              </button>
+              <button
+                onClick={handleInstallClick}
+                className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-colors shadow-sm active:scale-95 cursor-pointer"
+              >
+                Instalar
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

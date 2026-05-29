@@ -581,6 +581,49 @@ export const api = {
     localStorage.setItem('mimoo_instagram_url', url);
   },
 
+  // CONFIGURATIONS (Logo Settings)
+  async getStoreLogoUrl(): Promise<string> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'store_logo_url');
+        if (!error && data && data.length > 0) {
+          return data[0].value;
+        }
+      } catch (err) {
+        console.warn('Error fetching store_logo_url from app_settings', err);
+      }
+    }
+    return localStorage.getItem('mimoo_store_logo_url') || '';
+  },
+
+  async updateStoreLogoUrl(url: string): Promise<void> {
+    if (useRealSupabase && supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('app_settings')
+          .select('id')
+          .eq('key', 'store_logo_url');
+
+        if (!error && data && data.length > 0) {
+          await supabaseClient
+            .from('app_settings')
+            .update({ value: url })
+            .eq('id', data[0].id);
+        } else {
+          await supabaseClient
+            .from('app_settings')
+            .insert([{ key: 'store_logo_url', value: url }]);
+        }
+      } catch (err) {
+        console.warn('Error updating store_logo_url in app_settings', err);
+      }
+    }
+    localStorage.setItem('mimoo_store_logo_url', url);
+  },
+
   // AUTHENTICATION
   async loginAdmin(email: string, password: string): Promise<boolean> {
     if (useRealSupabase && supabaseClient) {
@@ -617,7 +660,7 @@ export const api = {
   },
 
   // STORAGE / FILE UPLOAD
-  async uploadImage(file: File, bucket: 'products' | 'banners' | 'orders'): Promise<string> {
+  async uploadImage(file: File, bucket: 'products' | 'banners' | 'orders' | 'logos'): Promise<string> {
     if (useRealSupabase && supabaseClient) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
