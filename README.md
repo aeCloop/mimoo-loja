@@ -1,20 +1,122 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 🎁 Mimoo Personalizados
 
-# Run and deploy your AI Studio app
+Loja virtual moderna para venda de produtos personalizados, desenvolvida com foco em praticidade, desempenho e experiência mobile.
 
-This contains everything you need to run your app locally.
+![Mimoo Personalizados](assets/logo-mimoo.png)
 
-View your app in AI Studio: https://ai.studio/apps/dd0e27b0-51d4-4430-b15e-a11549020a80
+## ✨ Sobre o Projeto
 
-## Run Locally
+A Mimoo Personalizados é uma plataforma de e-commerce desenvolvida para gerenciar e vender produtos personalizados de forma simples e intuitiva.
 
-**Prerequisites:**  Node.js
+O sistema permite que clientes naveguem pelos produtos, adicionem itens ao carrinho e realizem pedidos, enquanto o administrador possui um painel completo para gerenciamento da loja.
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🚀 Funcionalidades
+
+### 👤 Área do Cliente
+
+- Visualização de produtos
+- Filtro por categorias
+- Carrinho de compras
+- Solicitação de pedidos
+- Contato rápido via WhatsApp
+- Visualização de banners promocionais
+- Interface responsiva para celular e computador
+- Instalação como aplicativo (PWA)
+
+### 🔧 Área Administrativa
+
+- Login seguro
+- Cadastro de produtos
+- Upload de imagens
+- Controle de estoque por lotes
+- Cadastro e gerenciamento de categorias
+- Cadastro e gerenciamento de banners
+- Gerenciamento de pedidos
+- Configuração de WhatsApp
+- Configuração de Instagram
+- Configuração da logo da loja
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Supabase
+- Supabase Storage
+- Vercel
+- Progressive Web App (PWA)
+
+---
+
+## 🗄️ Banco de Dados
+
+O sistema utiliza Supabase para:
+
+- Autenticação
+- Banco de Dados PostgreSQL
+- Armazenamento de imagens
+- Configurações da loja
+
+Principais tabelas:
+
+- categories
+- products
+- product_lots
+- orders
+- banners
+- app_settings
+
+---
+
+## 📦 Deploy
+
+Aplicação hospedada na Vercel.
+
+🔗 Produção:
+
+https://mimoo-loja.vercel.app
+
+---
+
+## 📱 Instalação como Aplicativo
+
+A loja pode ser instalada diretamente no celular através do navegador.
+
+Ao acessar o site, será exibida uma opção para instalar o aplicativo e obter acesso mais rápido aos produtos e promoções.
+
+---
+
+## 🎨 Identidade Visual
+
+A identidade da Mimoo Personalizados foi desenvolvida para transmitir:
+
+- Carinho
+- Criatividade
+- Personalização
+- Confiança
+- Modernidade
+
+Slogan:
+
+> Feito com carinho, do seu jeito.
+
+---
+
+## 👨‍💻 Desenvolvedor
+
+**Adriano Costa**
+
+Desenvolvido com dedicação para oferecer uma experiência moderna e eficiente para clientes e administradores.
+
+---
+
+## 📄 Licença
+
+Projeto privado desenvolvido para uso da Mimoo Personalizados.
+
+Todos os direitos reservados © 2026.
