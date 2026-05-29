@@ -73,6 +73,8 @@ export default function AdminView({ onLogout }: AdminViewProps) {
   // 2. New Product Lot Price
   const [newLotProdId, setNewLotProdId] = useState('');
   const [newLotQty, setNewLotQty] = useState<'50' | '100' | '200' | string>('50');
+  const [isCustomQty, setIsCustomQty] = useState(false);
+  const [customQtyValue, setCustomQtyValue] = useState('');
   const [newLotPrice, setNewLotPrice] = useState('');
 
   // 3. New Category
@@ -799,14 +801,51 @@ export default function AdminView({ onLogout }: AdminViewProps) {
                       <div>
                         <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Quantidade do Lote *</label>
                         <select
-                          value={newLotQty}
-                          onChange={(e) => setNewLotQty(e.target.value)}
+                          value={isCustomQty ? 'custom' : newLotQty}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === 'custom') {
+                              setIsCustomQty(true);
+                              setNewLotQty(customQtyValue || '');
+                            } else {
+                              setIsCustomQty(false);
+                              setNewLotQty(val);
+                            }
+                          }}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-blue-700"
                         >
+                          <option value="10">10 Unidades</option>
+                          <option value="20">20 Unidades</option>
+                          <option value="30">30 Unidades</option>
                           <option value="50">50 Unidades</option>
                           <option value="100">100 Unidades</option>
+                          <option value="150">150 Unidades</option>
                           <option value="200">200 Unidades</option>
+                          <option value="250">250 Unidades</option>
+                          <option value="300">300 Unidades</option>
+                          <option value="500">500 Unidades</option>
+                          <option value="1000">1000 Unidades</option>
+                          <option value="custom">Personalizado</option>
                         </select>
+
+                        {isCustomQty && (
+                          <div className="mt-2 text-left">
+                            <label className="text-[9px] font-bold text-slate-400 block mb-0.5">Quant. Manual *</label>
+                            <input
+                              type="number"
+                              min="1"
+                              required
+                              value={customQtyValue}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setCustomQtyValue(val);
+                                setNewLotQty(val);
+                              }}
+                              placeholder="Digite a quant."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:border-blue-700 outline-none transition-all"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div>
