@@ -195,7 +195,11 @@ export const api = {
 
   async addCategory(name: string): Promise<Category> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('categories').insert([{ name }]).select().single();
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .insert([{ name }])
+        .select()
+        .single();
       if (error) throw error;
       return data;
     } else {
@@ -469,9 +473,16 @@ export const api = {
   // CONFIGURATIONS (WhatsApp Number)
   async getWhatsAppNumber(): Promise<string> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('app_settings').select('whatsapp_number').single();
-      if (!error && data) {
-        return data.whatsapp_number;
+      try {
+        const { data, error } = await supabaseClient
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'whatsapp_number');
+        if (!error && data && data.length > 0) {
+          return data[0].value;
+        }
+      } catch (err) {
+        console.warn('Error fetching whatsapp_number from app_settings', err);
       }
     }
     return localStorage.getItem('mimoo_whatsapp_number') || '5511999999999';
@@ -480,36 +491,88 @@ export const api = {
   async updateWhatsAppNumber(num: string): Promise<void> {
     const cleanNum = num.replace(/\D/g, '');
     if (useRealSupabase && supabaseClient) {
-      await supabaseClient.from('app_settings').upsert({ id: 1, whatsapp_number: cleanNum });
+      try {
+        const { data, error } = await supabaseClient
+          .from('app_settings')
+          .select('id')
+          .eq('key', 'whatsapp_number');
+
+        if (!error && data && data.length > 0) {
+          await supabaseClient
+            .from('app_settings')
+            .update({ value: cleanNum })
+            .eq('id', data[0].id);
+        } else {
+          await supabaseClient
+            .from('app_settings')
+            .insert([{ key: 'whatsapp_number', value: cleanNum }]);
+        }
+      } catch (err) {
+        console.warn('Error updating whatsapp_number in app_settings', err);
+      }
     }
     localStorage.setItem('mimoo_whatsapp_number', cleanNum);
   },
 
   // CONFIGURATIONS (Instagram Settings)
   async getInstagramSettings(): Promise<{ username: string; url: string }> {
+    let username = localStorage.getItem('mimoo_instagram_username') || '@mimoopersonalizados';
+    let url = localStorage.getItem('mimoo_instagram_url') || 'https://instagram.com/mimoopersonalizados';
+
     if (useRealSupabase && supabaseClient) {
       try {
-        const { data, error } = await supabaseClient.from('app_settings').select('instagram_username, instagram_url').single();
-        if (!error && data) {
-          return {
-            username: data.instagram_username || localStorage.getItem('mimoo_instagram_username') || '@mimoopersonalizados',
-            url: data.instagram_url || localStorage.getItem('mimoo_instagram_url') || 'https://instagram.com/mimoopersonalizados'
-          };
+        const { data, error } = await supabaseClient
+          .from('app_settings')
+          .select('key, value')
+          .in('key', ['instagram_username', 'instagram_url']);
+
+        if (!error && data && data.length > 0) {
+          const userRow = data.find(r => r.key === 'instagram_username');
+          const urlRow = data.find(r => r.key === 'instagram_url');
+          if (userRow) username = userRow.value;
+          if (urlRow) url = urlRow.value;
         }
       } catch (err) {
         console.warn('Supabase app_settings error loading columns, falling back to localStorage', err);
       }
     }
-    return {
-      username: localStorage.getItem('mimoo_instagram_username') || '@mimoopersonalizados',
-      url: localStorage.getItem('mimoo_instagram_url') || 'https://instagram.com/mimoopersonalizados'
-    };
+    return { username, url };
   },
 
   async updateInstagramSettings(username: string, url: string): Promise<void> {
     if (useRealSupabase && supabaseClient) {
       try {
-        await supabaseClient.from('app_settings').upsert({ id: 1, instagram_username: username, instagram_url: url });
+        // Update username
+        const { data: userExist, error: userError } = await supabaseClient
+          .from('app_settings')
+          .select('id')
+          .eq('key', 'instagram_username');
+        if (!userError && userExist && userExist.length > 0) {
+          await supabaseClient
+            .from('app_settings')
+            .update({ value: username })
+            .eq('id', userExist[0].id);
+        } else {
+          await supabaseClient
+            .from('app_settings')
+            .insert([{ key: 'instagram_username', value: username }]);
+        }
+
+        // Update url
+        const { data: urlExist, error: urlError } = await supabaseClient
+          .from('app_settings')
+          .select('id')
+          .eq('key', 'instagram_url');
+        if (!urlError && urlExist && urlExist.length > 0) {
+          await supabaseClient
+            .from('app_settings')
+            .update({ value: url })
+            .eq('id', urlExist[0].id);
+        } else {
+          await supabaseClient
+            .from('app_settings')
+            .insert([{ key: 'instagram_url', value: url }]);
+        }
       } catch (err) {
         console.warn('Supabase app_settings error updating columns, storing locally', err);
       }
@@ -560,19 +623,60 @@ export const api = {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabaseClient.storage
-        .from(bucket)
-        .upload(filePath, file);
+      try {
+        const { error: uploadError } = await supabaseClient.storage
+          .from(bucket)
+          .upload(filePath, file);
 
-      if (uploadError) {
-        throw uploadError;
+        if (!uploadError) {
+          const { data } = supabaseClient.storage
+            .from(bucket)
+            .getPublicUrl(filePath);
+          return data.publicUrl;
+        }
+        console.warn(`Initial upload attempt to bucket "${bucket}" failed. Error Details:`, uploadError);
+      } catch (err) {
+        console.warn(`Exception during initial upload attempt to bucket "${bucket}":`, err);
       }
 
-      const { data } = supabaseClient.storage
-        .from(bucket)
-        .getPublicUrl(filePath);
+      // Fallback: If designated bucket failed and it wasn't 'products', try 'products' bucket
+      if (bucket !== 'products') {
+        console.log(`Switching to fallback storage upload: routing to "products" bucket for target category "${bucket}"`);
+        const subfolderPath = `${bucket}/${fileName}`;
 
-      return data.publicUrl;
+        try {
+          // Attempt 1: Try putting it inside a subfolder in 'products' bucket
+          const { error: subfolderError } = await supabaseClient.storage
+            .from('products')
+            .upload(subfolderPath, file);
+
+          if (!subfolderError) {
+            const { data } = supabaseClient.storage
+              .from('products')
+              .getPublicUrl(subfolderPath);
+            return data.publicUrl;
+          }
+          console.warn(`Fallback upload to "products" with subfolder prefix failed:`, subfolderError);
+
+          // Attempt 2: Try putting it directly at the root level of 'products' bucket
+          const { error: rootError } = await supabaseClient.storage
+            .from('products')
+            .upload(fileName, file);
+
+          if (!rootError) {
+            const { data } = supabaseClient.storage
+              .from('products')
+              .getPublicUrl(fileName);
+            return data.publicUrl;
+          }
+          throw rootError;
+        } catch (fallbackErr: any) {
+          console.error(`All storage bucket routes exhausted/failed for item "${file.name}":`, fallbackErr);
+          throw new Error(fallbackErr.message || `Erro de armazenamento no Supabase. O bucket "${bucket}" não está disponível ou suas políticas de acesso público estão restritas.`);
+        }
+      } else {
+        throw new Error(`Erro de armazenamento no Supabase. O bucket principal "products" não pôde ser acessado. Verifique as configurações de RLS públicas em seu painel.`);
+      }
     } else {
       // Offline/local sandbox upload simulation: convert to high quality Base64 so it can be verified beautifully in the preview!
       return new Promise((resolve, reject) => {

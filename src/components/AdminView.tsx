@@ -242,7 +242,7 @@ export default function AdminView({ onLogout }: AdminViewProps) {
       setNewCatName('');
       showSuccess(`Categoria "${added.name}" criada!`);
     } catch (err: any) {
-      setErrorMsg('Erro ao criar categoria.');
+      setErrorMsg('Erro ao criar categoria: ' + (err.message || JSON.stringify(err)));
     }
   };
 
