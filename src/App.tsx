@@ -68,6 +68,60 @@ export default function App() {
     localStorage.setItem('mimoo_cart_items', JSON.stringify(cart));
   }, [cart]);
 
+  // Dynamic manifest generator so that when the Admin updates the store logo, it instantly is set as the PWA icon
+  useEffect(() => {
+    try {
+      const manifestElement = document.getElementById('pwa-manifest');
+      if (manifestElement) {
+        const dynamicManifest = {
+          short_name: "Mimoo App",
+          name: "Mimoo Personalizados",
+          description: "Criando presentes únicos e momentos inesquecíveis.",
+          icons: [
+            {
+              "src": "/icon.svg",
+              "type": "image/svg+xml",
+              "sizes": "any"
+            },
+            {
+              "src": logoUrl || "/icon-192.png",
+              "type": logoUrl ? "image/png" : "image/svg+xml",
+              "sizes": logoUrl ? "512x512" : "192x192"
+            },
+            {
+              "src": logoUrl || "/icon-512.png",
+              "type": logoUrl ? "image/png" : "image/svg+xml",
+              "sizes": logoUrl ? "512x512" : "512x512"
+            }
+          ],
+          start_url: "/",
+          background_color: "#fafafa",
+          theme_color: "#1d4ed8",
+          display: "standalone",
+          orientation: "portrait"
+        };
+
+        const stringManifest = JSON.stringify(dynamicManifest);
+        const blob = new Blob([stringManifest], { type: 'application/json' });
+        const manifestBlobUrl = URL.createObjectURL(blob);
+        
+        manifestElement.setAttribute('href', manifestBlobUrl);
+
+        // Update Apple iOS touch icon href too
+        const appleIconEl = document.querySelector('link[rel="apple-touch-icon"]');
+        if (appleIconEl) {
+          appleIconEl.setAttribute('href', logoUrl || "/icon-192.png");
+        }
+
+        return () => {
+          URL.revokeObjectURL(manifestBlobUrl);
+        };
+      }
+    } catch (err) {
+      console.warn('Could not update dynamic PWA manifest:', err);
+    }
+  }, [logoUrl]);
+
   useEffect(() => {
     // Initial fetch
     fetchInitialData();
