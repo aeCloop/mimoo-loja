@@ -189,8 +189,10 @@ export default function CartView({
         `${fileAttachmentMsg}\n\n` +
         `Fico no aguardo da aprovação e início da produção do meu Mimoo! Obrigado!`;
 
+      // Sanitizar número do WhatsApp para o formato wa.me
+      const cleanNumber = whatsappNumber.replace(/\D/g, '');
       const encodedMsg = encodeURIComponent(baseText);
-      const waUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMsg}`;
+      const waUrl = `https://wa.me/${cleanNumber}?text=${encodedMsg}`;
 
       // Save local data if checkbox is active
       if (saveDataLocally) {
@@ -213,12 +215,17 @@ export default function CartView({
       setCep('');
 
       // Set Success State & trigger redirect
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
       setOrderSuccess({ id: createdOrder.id, redirectUrl: waUrl });
       
-      try {
-        window.open(waUrl, '_blank');
-      } catch (err) {
-        console.warn('Auto redirect blocked by popup blocker.', err);
+      if (!isIOS) {
+        try {
+          window.open(waUrl, '_blank');
+        } catch (err) {
+          console.warn('Auto redirect blocked by popup blocker.', err);
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -242,47 +249,47 @@ export default function CartView({
         
         <div className="space-y-2">
           <span className="text-slate-400 font-bold font-mono text-xs uppercase tracking-wider block">ID do Pedido: #{orderSuccess.id}</span>
-          <h2 className="font-extrabold text-slate-800 text-xl sm:text-2xl tracking-tight leading-tight">
-            Pedido Confirmado! 🎉
+          <h2 className="font-extrabold text-emerald-700 text-xl sm:text-2xl tracking-tight leading-tight">
+            Pedido registrado com sucesso!🏆
           </h2>
-          <p className="text-slate-500 text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
-            Seu pedido especial da Mimoo foi criado no sistema de forma segura. Agora, vamos fechar os detalhes de arte e personalização com você via WhatsApp!
+          <p className="text-slate-600 text-sm sm:text-base font-semibold max-w-sm mx-auto leading-relaxed">
+            Agora toque no botão abaixo para enviar seu pedido pelo WhatsApp.
+          </p>
+          <p className="text-slate-400 text-xs max-w-xs mx-auto leading-normal">
+            Seu pedido especial da Mimoo já foi gerado com sucesso no sistema. Só falta enviar os detalhes no WhatsApp para iniciarmos a personalização!
           </p>
         </div>
 
-        {/* Loading Indicator */}
-        <div className="bg-emerald-50/40 rounded-2xl p-4 border border-emerald-100 w-full max-w-md space-y-2 text-left">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
-            <span className="text-xs font-bold text-slate-700">Redirecionando automático...</span>
-          </div>
-          <p className="text-[11px] text-slate-500">
-            Se o seu navegador bloqueou a abertura do aplicativo, use o botão de envio manual abaixo.
+        {/* Loading Indicator / Help note */}
+        <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 w-full max-w-md space-y-1.5 text-left">
+          <span className="text-xs font-bold text-slate-700 block">Envio Obrigatório</span>
+          <p className="text-[11px] text-slate-500 leading-normal">
+            Toque no botão verde abaixo. Você será redirecionado para o WhatsApp com a mensagem estruturada contendo todos os itens prontinha para envio.
           </p>
         </div>
 
-        <div className="w-full max-w-md flex flex-col sm:flex-row gap-3 pt-2">
+        <div className="w-full max-w-md flex flex-col gap-3 pt-2">
+          <a
+            href={orderSuccess.redirectUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full bg-[#25D366] hover:bg-[#20ba59] hover:shadow-emerald-500/20 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-95 transform cursor-pointer text-center"
+          >
+            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.284l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.768-5.764-5.768zm3.394 8.216c-.146.415-.844.755-1.164.808-.285.048-.654.088-1.055-.042-.254-.083-.575-.192-1.003-.377-1.823-.788-3.003-2.653-3.094-2.775-.091-.122-.738-.982-.738-1.96 0-.978.511-1.458.693-1.66.183-.202.4-.253.533-.253.133 0 .267.002.383.007.124.005.289-.047.452.34.167.394.572 1.391.621 1.492.05.101.083.219.016.353-.067.135-.101.219-.201.336-.1.117-.21.261-.299.353-.099.103-.202.215-.087.412.115.197.511.844 1.096 1.365.753.67 1.389.877 1.587.975.198.098.314.081.43-.053.116-.134.498-.58.631-.776.133-.197.266-.164.449-.097.182.067 1.155.544 1.355.644.199.1.332.149.381.234.05.085.05.49-.096.905zM12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
+            </svg>
+            Enviar pedido pelo WhatsApp
+          </a>
+
           <button
             type="button"
             onClick={() => {
               setOrderSuccess(null);
             }}
-            className="flex-1 py-3.5 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-wider rounded-xl cursor-pointer active:scale-95 transition-transform"
+            className="w-full py-3 border border-slate-200 hover:bg-slate-50 text-slate-500 text-xs font-extrabold uppercase tracking-wider rounded-xl cursor-pointer active:scale-95 transition-transform"
           >
-            Voltar ao Catálogo
+            Voltar ao Catálogo Mimoo
           </button>
-          
-          <a
-            href={orderSuccess.redirectUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-[#25D366] hover:bg-[#20ba59] text-white py-3.5 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-95 transform cursor-pointer text-center"
-          >
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.284l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.768-5.764-5.768zm3.394 8.216c-.146.415-.844.755-1.164.808-.285.048-.654.088-1.055-.042-.254-.083-.575-.192-1.003-.377-1.823-.788-3.003-2.653-3.094-2.775-.091-.122-.738-.982-.738-1.96 0-.978.511-1.458.693-1.66.183-.202.4-.253.533-.253.133 0 .267.002.383.007.124.005.289-.047.452.34.167.394.572 1.391.621 1.492.05.101.083.219.016.353-.067.135-.101.219-.201.336-.1.117-.21.261-.299.353-.099.103-.202.215-.087.412.115.197.511.844 1.096 1.365.753.67 1.389.877 1.587.975.198.098.314.081.43-.053.116-.134.498-.58.631-.776.133-.197.266-.164.449-.097.182.067 1.155.544 1.355.644.199.1.332.149.381.234.05.085.05.49-.096.905zM12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path>
-            </svg>
-            Abrir WhatsApp
-          </a>
         </div>
       </div>
     );

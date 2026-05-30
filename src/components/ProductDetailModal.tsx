@@ -136,7 +136,7 @@ export default function ProductDetailModal({ product, onClose, onAddToCart }: Pr
         className="w-full max-w-xl bg-[#faf9f8] rounded-t-[28px] overflow-hidden flex flex-col relative shadow-[0_-8px_40px_rgba(15,23,42,0.15)] h-[90vh] md:h-[80vh] max-h-[780px] z-10 animate-slideUp border-t border-slate-100"
       >
         {/* Grabber indicator & close bar */}
-        <header className="flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100/60">
+        <header className="flex items-center justify-between px-5 py-4 bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100/60">
           <div className="w-12 h-1 rounded-full bg-slate-200 absolute top-2.5 left-1/2 -translate-x-1/2"></div>
           <h2 className="font-extrabold text-slate-800 text-sm md:text-base uppercase tracking-wider flex items-center gap-2 mt-1">
             Detalhes do Produto
