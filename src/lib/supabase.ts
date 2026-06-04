@@ -185,9 +185,14 @@ export const api = {
   // CATEGORIES
   async getCategories(): Promise<Category[]> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('categories').select('*').order('name', { ascending: true });
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await supabaseClient.from('categories').select('*').order('name', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Supabase getCategories error, falling back to local storage:', err);
+        return getStored<Category[]>('categories', DEFAULT_CATEGORIES);
+      }
     } else {
       return getStored<Category[]>('categories', DEFAULT_CATEGORIES);
     }
@@ -195,13 +200,25 @@ export const api = {
 
   async addCategory(name: string): Promise<Category> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient
-        .from('categories')
-        .insert([{ name }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabaseClient
+          .from('categories')
+          .insert([{ name }])
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('Supabase addCategory error, falling back to local storage:', err);
+        const list = getStored<Category[]>('categories', DEFAULT_CATEGORIES);
+        const newItem: Category = {
+          id: 'cat-' + Date.now(),
+          name,
+          created_at: new Date().toISOString()
+        };
+        setStored('categories', [...list, newItem]);
+        return newItem;
+      }
     } else {
       const list = getStored<Category[]>('categories', DEFAULT_CATEGORIES);
       const newItem: Category = {
@@ -216,8 +233,14 @@ export const api = {
 
   async deleteCategory(id: string): Promise<void> {
     if (useRealSupabase && supabaseClient) {
-      const { error } = await supabaseClient.from('categories').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabaseClient.from('categories').delete().eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Supabase deleteCategory error, falling back to local storage:', err);
+        const list = getStored<Category[]>('categories', DEFAULT_CATEGORIES);
+        setStored('categories', list.filter(c => c.id !== id));
+      }
     } else {
       const list = getStored<Category[]>('categories', DEFAULT_CATEGORIES);
       setStored('categories', list.filter(c => c.id !== id));
@@ -227,13 +250,19 @@ export const api = {
   // PRODUCTS
   async getProducts(includeInactive = false): Promise<Product[]> {
     if (useRealSupabase && supabaseClient) {
-      let query = supabaseClient.from('products').select('*');
-      if (!includeInactive) {
-        query = query.eq('active', true);
+      try {
+        let query = supabaseClient.from('products').select('*');
+        if (!includeInactive) {
+          query = query.eq('active', true);
+        }
+        const { data, error } = await query.order('name', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Supabase getProducts error, falling back to local storage:', err);
+        const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
+        return includeInactive ? list : list.filter(p => p.active);
       }
-      const { data, error } = await query.order('name', { ascending: true });
-      if (error) throw error;
-      return data || [];
     } else {
       const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
       return includeInactive ? list : list.filter(p => p.active);
@@ -242,13 +271,26 @@ export const api = {
 
   async addProduct(product: Omit<Product, 'id' | 'orders_count'>): Promise<Product> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient
-        .from('products')
-        .insert([{ ...product, orders_count: 0 }])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabaseClient
+          .from('products')
+          .insert([{ ...product, orders_count: 0 }])
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('Supabase addProduct error, falling back to local storage:', err);
+        const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
+        const newItem: Product = {
+          ...product,
+          id: 'prod-' + Date.now(),
+          orders_count: 0,
+          created_at: new Date().toISOString()
+        };
+        setStored('products', [...list, newItem]);
+        return newItem;
+      }
     } else {
       const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
       const newItem: Product = {
@@ -264,14 +306,24 @@ export const api = {
 
   async updateProduct(id: string, product: Partial<Product>): Promise<Product> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient
-        .from('products')
-        .update(product)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabaseClient
+          .from('products')
+          .update(product)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('Supabase updateProduct error, falling back to local storage:', err);
+        const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
+        const isPresent = list.find(p => p.id === id);
+        if (!isPresent) throw new Error('Product not found');
+        const updated = { ...isPresent, ...product };
+        setStored('products', list.map(p => p.id === id ? updated : p));
+        return updated;
+      }
     } else {
       const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
       const isPresent = list.find(p => p.id === id);
@@ -284,8 +336,17 @@ export const api = {
 
   async deleteProduct(id: string): Promise<void> {
     if (useRealSupabase && supabaseClient) {
-      const { error } = await supabaseClient.from('products').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabaseClient.from('products').delete().eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Supabase deleteProduct error, falling back to local storage:', err);
+        const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
+        setStored('products', list.filter(p => p.id !== id));
+        // delete connected lots too
+        const lots = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
+        setStored('product_lots', lots.filter(l => l.product_id !== id));
+      }
     } else {
       const list = getStored<Product[]>('products', DEFAULT_PRODUCTS);
       setStored('products', list.filter(p => p.id !== id));
@@ -298,13 +359,22 @@ export const api = {
   // PRODUCT LOTS
   async getProductLots(productId?: string): Promise<ProductLot[]> {
     if (useRealSupabase && supabaseClient) {
-      let query = supabaseClient.from('product_lots').select('*');
-      if (productId) {
-        query = query.eq('product_id', productId);
+      try {
+        let query = supabaseClient.from('product_lots').select('*');
+        if (productId) {
+          query = query.eq('product_id', productId);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Supabase getProductLots error, falling back to local storage:', err);
+        const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
+        if (productId) {
+          return list.filter(l => l.product_id === productId);
+        }
+        return list;
       }
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
     } else {
       const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
       if (productId) {
@@ -316,9 +386,20 @@ export const api = {
 
   async addProductLot(lot: Omit<ProductLot, 'id'>): Promise<ProductLot> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('product_lots').insert([lot]).select().single();
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabaseClient.from('product_lots').insert([lot]).select().single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('Supabase addProductLot error, falling back to local storage:', err);
+        const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
+        const newItem: ProductLot = {
+          ...lot,
+          id: 'lot-' + Date.now()
+        };
+        setStored('product_lots', [...list, newItem]);
+        return newItem;
+      }
     } else {
       const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
       const newItem: ProductLot = {
@@ -332,8 +413,14 @@ export const api = {
 
   async deleteProductLot(id: string): Promise<void> {
     if (useRealSupabase && supabaseClient) {
-      const { error } = await supabaseClient.from('product_lots').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabaseClient.from('product_lots').delete().eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Supabase deleteProductLot error, falling back to local storage:', err);
+        const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
+        setStored('product_lots', list.filter(l => l.id !== id));
+      }
     } else {
       const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
       setStored('product_lots', list.filter(l => l.id !== id));
@@ -342,9 +429,19 @@ export const api = {
 
   async updateProductLot(id: string, lot: Partial<ProductLot>): Promise<ProductLot> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('product_lots').update(lot).eq('id', id).select().single();
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabaseClient.from('product_lots').update(lot).eq('id', id).select().single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('Supabase updateProductLot error, falling back to local storage:', err);
+        const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
+        const found = list.find(l => l.id === id);
+        if (!found) throw new Error('Product Lot not found');
+        const updated = { ...found, ...lot };
+        setStored('product_lots', list.map(l => l.id === id ? updated : l));
+        return updated;
+      }
     } else {
       const list = getStored<ProductLot[]>('product_lots', DEFAULT_LOTS);
       const found = list.find(l => l.id === id);
@@ -358,9 +455,14 @@ export const api = {
   // BANNERS
   async getBanners(): Promise<Banner[]> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('banners').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      try {
+        const { data, error } = await supabaseClient.from('banners').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.warn('Supabase getBanners error, falling back to local storage:', err);
+        return getStored<Banner[]>('banners', DEFAULT_BANNERS);
+      }
     } else {
       return getStored<Banner[]>('banners', DEFAULT_BANNERS);
     }
@@ -368,9 +470,22 @@ export const api = {
 
   async addBanner(image_url: string): Promise<Banner> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('banners').insert([{ image_url, active: true }]).select().single();
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabaseClient.from('banners').insert([{ image_url, active: true }]).select().single();
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn('Supabase addBanner error, falling back to local storage:', err);
+        const list = getStored<Banner[]>('banners', DEFAULT_BANNERS);
+        const newItem: Banner = {
+          id: 'banner-' + Date.now(),
+          image_url,
+          active: true,
+          created_at: new Date().toISOString()
+        };
+        setStored('banners', [newItem, ...list]);
+        return newItem;
+      }
     } else {
       const list = getStored<Banner[]>('banners', DEFAULT_BANNERS);
       const newItem: Banner = {
@@ -386,8 +501,14 @@ export const api = {
 
   async deleteBanner(id: string): Promise<void> {
     if (useRealSupabase && supabaseClient) {
-      const { error } = await supabaseClient.from('banners').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabaseClient.from('banners').delete().eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Supabase deleteBanner error, falling back to local storage:', err);
+        const list = getStored<Banner[]>('banners', DEFAULT_BANNERS);
+        setStored('banners', list.filter(b => b.id !== id));
+      }
     } else {
       const list = getStored<Banner[]>('banners', DEFAULT_BANNERS);
       setStored('banners', list.filter(b => b.id !== id));
@@ -397,12 +518,17 @@ export const api = {
   // ORDERS
   async getOrders(): Promise<Order[]> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data || []).map(o => ({
-        ...o,
-        items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items
-      }));
+      try {
+        const { data, error } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(o => ({
+          ...o,
+          items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items
+        }));
+      } catch (err) {
+        console.warn('Supabase getOrders error, falling back to local storage:', err);
+        return getStored<Order[]>('orders', DEFAULT_ORDERS);
+      }
     } else {
       return getStored<Order[]>('orders', DEFAULT_ORDERS);
     }
@@ -410,17 +536,43 @@ export const api = {
 
   async createOrder(orderData: Omit<Order, 'id' | 'created_at' | 'status'>): Promise<Order> {
     if (useRealSupabase && supabaseClient) {
-      const payload = {
-        ...orderData,
-        status: 'Novo' as OrderStatus,
-        items: JSON.stringify(orderData.items) // store items as JSON string in PostgreSQL/Firestore mock text field
-      };
-      const { data, error } = await supabaseClient.from('orders').insert([payload]).select().single();
-      if (error) throw error;
-      return {
-        ...data,
-        items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items
-      };
+      try {
+        const payload = {
+          ...orderData,
+          status: 'Novo' as OrderStatus,
+          items: JSON.stringify(orderData.items) // store items as JSON string in PostgreSQL/Firestore mock text field
+        };
+        const { data, error } = await supabaseClient.from('orders').insert([payload]).select().single();
+        if (error) throw error;
+        return {
+          ...data,
+          items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items
+        };
+      } catch (err) {
+        console.warn('Supabase createOrder error, falling back to local storage:', err);
+        const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
+        const newId = 'ord-' + (1000 + list.length + 1);
+        const newOrder: Order = {
+          ...orderData,
+          id: newId,
+          status: 'Novo',
+          created_at: new Date().toISOString()
+        };
+        setStored('orders', [newOrder, ...list]);
+
+        // increment orders_count on the products purchased
+        const prods = getStored<Product[]>('products', DEFAULT_PRODUCTS);
+        const updatedProds = prods.map(p => {
+          const boughtItem = orderData.items.find(item => item.id.includes(p.id) || p.id === item.id);
+          if (boughtItem) {
+            return { ...p, orders_count: p.orders_count + boughtItem.quantity };
+          }
+          return p;
+        });
+        setStored('products', updatedProds);
+
+        return newOrder;
+      }
     } else {
       const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
       const newId = 'ord-' + (1000 + list.length + 1);
@@ -449,17 +601,27 @@ export const api = {
 
   async updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
     if (useRealSupabase && supabaseClient) {
-      const { data, error } = await supabaseClient
-        .from('orders')
-        .update({ status })
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return {
-        ...data,
-        items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items
-      };
+      try {
+        const { data, error } = await supabaseClient
+          .from('orders')
+          .update({ status })
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return {
+          ...data,
+          items: typeof data.items === 'string' ? JSON.parse(data.items) : data.items
+        };
+      } catch (err) {
+        console.warn('Supabase updateOrderStatus error, falling back to local storage:', err);
+        const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
+        const found = list.find(o => o.id === id);
+        if (!found) throw new Error('Order not found');
+        const updated = { ...found, status };
+        setStored('orders', list.map(o => o.id === id ? updated : o));
+        return updated;
+      }
     } else {
       const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
       const found = list.find(o => o.id === id);
@@ -472,11 +634,17 @@ export const api = {
 
   async deleteOrder(id: string): Promise<void> {
     if (useRealSupabase && supabaseClient) {
-      const { error } = await supabaseClient
-        .from('orders')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabaseClient
+          .from('orders')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Supabase deleteOrder error, falling back to local storage:', err);
+        const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
+        setStored('orders', list.filter(o => o.id !== id));
+      }
     } else {
       const list = getStored<Order[]>('orders', DEFAULT_ORDERS);
       setStored('orders', list.filter(o => o.id !== id));
