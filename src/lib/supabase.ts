@@ -659,15 +659,35 @@ export const api = {
 
   async logoutAdmin(): Promise<void> {
     if (useRealSupabase && supabaseClient) {
-      await supabaseClient.auth.signOut();
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (err) {
+        console.warn('Error during signOut:', err);
+      }
     }
     localStorage.removeItem('mimoo_admin_logged_in');
   },
 
   async isAdminLoggedIn(): Promise<boolean> {
     if (useRealSupabase && supabaseClient) {
-      const { data } = await supabaseClient.auth.getSession();
-      return !!data.session;
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          console.warn('Supabase session retrieval error:', error);
+          // If the token is invalid or not found, sign out to clear the corrupted local state
+          await supabaseClient.auth.signOut().catch(() => {});
+          return false;
+        }
+        return !!data.session;
+      } catch (err) {
+        console.warn('Exception during admin login check:', err);
+        try {
+          await supabaseClient.auth.signOut().catch(() => {});
+        } catch {
+          // ignore
+        }
+        return false;
+      }
     }
     return localStorage.getItem('mimoo_admin_logged_in') === 'true';
   },
